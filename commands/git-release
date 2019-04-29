@@ -2,25 +2,27 @@
 #
 # Usage: git release start <version> [commit]
 # Usage: git release finish <version>
-set -e
 
-# Defaults
+# subcommand of git release
+CMD=${1:-start}
+
+# get the settings from git config
 BRANCHPREFIX=$(git config --get oneflow.prefix.release)
 BRANCHFROM=$(git config --get oneflow.branch.next)
 BRANCHRELEASE=$(git config --get oneflow.branch.main)
 VERSIONPREFIX=$(git config --get oneflow.prefix.version)
+
+# build final versiontag name and branch name
 VERSIONTAG=${VERSIONPREFIX}$2
 BRANCH="${BRANCHPREFIX}${VERSIONTAG}"
+
+# tests for a clean state
+WORKINGDIRDIRTY=$(git status --porcelain)
+BRANCHEXISTS=$(git rev-parse --quiet --verify "$BRANCH")
 
 # third parameter in release start <version> [commit]
 # is used as a reference to branch off from.
 BRANCHFROM=${3:-$BRANCHFROM}
-
-# Help function showing usage of the command
-usage() {
-    echo -e "Usage:\n\tgit release start <version> [commit]"
-    echo -e "\tgit release finish <version>"
-}
 
 # merges release branch into develop and creates
 # fast forward merge into master to create release tag.
@@ -35,47 +37,47 @@ function createRelease {
     git merge --ff-only "$VERSIONTAG"
 }
 
-function releaseBranch {
-
-    if [ -z "$2" ] ; then
-        usage
-        exit 0
-    fi
-
-    case "$1" in
-        start)
-            if git rev-parse --quiet --verify "$BRANCH" ; then
-                echo "Branch $BRANCH already exists!"
-                exit 0
-
-            else
-                if git status --porcelain ; then
-                    echo "Your working directory is dirty."
-                    git status
-                else
-                    git checkout -b "$BRANCH" "$BRANCHFROM"
-                fi
-            fi
-            exit
-            ;;
-
-        finish)
-
-            if git status --porcelain ; then
-                echo "Your working directory is dirty."
-                git status
-            else
-                createRelease
-            fi
-            exit
-            ;;
-
-        *)
-            usage
-            exit
-            ;;
-
-    esac
+# Help function showing usage of the command
+usage() {
+    echo -e "Usage:\n\tgit release start <version> [commit]"
+    echo -e "\tgit release finish <version>"
 }
 
-releaseBranch "$1" "$2"
+# abort if the <version> is missing and show the help
+if [ -z "$2" ] ; then
+    echo "<version> parameter is missing!"
+    usage
+    exit 0
+fi
+
+# abort if working directory is dirty
+if [ "$WORKINGDIRDIRTY" ] ; then
+    echo "Your working directory is dirty!"
+    git status
+    exit 0
+fi
+
+# the main logic handler.
+case "$CMD" in
+    start)
+        if [ "$BRANCHEXISTS" ] ; then
+            echo "Branch $BRANCH already exists!"
+            exit 0
+
+        else
+            git checkout -b "$BRANCH" "$BRANCHFROM"
+        fi
+        exit
+        ;;
+
+    finish)
+        createRelease
+        exit
+        ;;
+
+    *)
+        usage
+        exit
+        ;;
+
+esac
