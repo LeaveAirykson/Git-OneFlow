@@ -40,11 +40,11 @@ function featureBranch {
                 exit 0
 
             else
-                if ! git status --porcelain ; then
-                    git checkout -b "$BRANCH" "$BRANCHFROM"
-                else
+                if git status --porcelain ; then
                     echo "Your working directory is dirty."
                     git status
+                else
+                    git checkout -b "$BRANCH" "$BRANCHFROM"
                 fi
             fi
             exit
@@ -52,11 +52,11 @@ function featureBranch {
 
         finish)
 
-            if ! git status --porcelain ; then
-                createFeature
-            else
+            if git status --porcelain ; then
                 echo "Your working directory is dirty."
                 git status
+            else
+                createFeature
             fi
             exit
             ;;

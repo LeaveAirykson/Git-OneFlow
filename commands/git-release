@@ -49,11 +49,11 @@ function releaseBranch {
                 exit 0
 
             else
-                if ! git status --porcelain ; then
-                    git checkout -b "$BRANCH" "$BRANCHFROM"
-                else
+                if git status --porcelain ; then
                     echo "Your working directory is dirty."
                     git status
+                else
+                    git checkout -b "$BRANCH" "$BRANCHFROM"
                 fi
             fi
             exit
@@ -61,11 +61,11 @@ function releaseBranch {
 
         finish)
 
-            if ! git status --porcelain ; then
-                createRelease
-            else
+            if git status --porcelain ; then
                 echo "Your working directory is dirty."
                 git status
+            else
+                createRelease
             fi
             exit
             ;;
