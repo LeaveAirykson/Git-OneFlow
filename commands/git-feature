@@ -1,5 +1,53 @@
 #!/bin/bash
 #
 # Usage: git feature <name>
-#
-echo "git-feature output!";
+set -e
+
+usage() {
+    echo -e "Usage:\n\tgit feature start <name>"
+    echo -e "\tgit feature finish <name>"
+}
+
+function featureBranch {
+
+    if [ -z "$2" ] ; then
+        usage
+        exit 0
+    fi
+
+
+    BRANCHPREFIX=$(git config --get oneflow.prefix.feature)
+    MAINBRANCH=$(git config --get oneflow.branch.main)
+    BRANCH="${BRANCHPREFIX}$2"
+
+    case "$1" in
+        start)
+            if git rev-parse --quiet --verify "$BRANCH" ; then
+                echo "Branch $BRANCH already exists!"
+                exit 0
+
+            else
+                git co -b "$BRANCH" "$MAINBRANCH"
+            fi
+            exit
+            ;;
+
+        finish)
+            git checkout "$BRANCH"
+            git rebase -i "$MAINBRANCH"
+            git checkout "$MAINBRANCH"
+            git merge --no-ff "$BRANCH"
+            git push origin "$MAINBRANCH"
+            git branch -d "$BRANCH"
+            exit
+            ;;
+
+        *)
+            usage
+            exit
+            ;;
+
+    esac
+}
+
+featureBranch "$1" "$2"
