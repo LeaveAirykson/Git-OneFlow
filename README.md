@@ -6,5 +6,5 @@ This project is a GitFlow replacement due to the overhead of GitFlow and its dow
 To install the script please clone the repository and start the install script.
 
 ```
-git clone 
+git clone git@github.com:LeaveAirykson/git-oneflow.git
 ```
