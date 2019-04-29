@@ -27,18 +27,29 @@ function featureBranch {
                 exit 0
 
             else
-                git co -b "$BRANCH" "$MAINBRANCH"
+                if ! git status --porcelain ; then
+                    git co -b "$BRANCH" "$MAINBRANCH"
+                else
+                    echo "Your working directory is dirty."
+                    git status
+                fi
             fi
             exit
             ;;
 
         finish)
-            git checkout "$BRANCH"
-            git rebase -i "$MAINBRANCH"
-            git checkout "$MAINBRANCH"
-            git merge --no-ff "$BRANCH"
-            git push origin "$MAINBRANCH"
-            git branch -d "$BRANCH"
+
+            if ! git status --porcelain ; then
+                git checkout "$BRANCH"
+                git rebase -i "$MAINBRANCH"
+                git checkout "$MAINBRANCH"
+                git merge --no-ff "$BRANCH"
+                git push origin "$MAINBRANCH"
+                git branch -d "$BRANCH"
+            else
+                echo "Your working directory is dirty."
+                git status
+            fi
             exit
             ;;
 
