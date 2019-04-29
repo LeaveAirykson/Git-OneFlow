@@ -1,12 +1,30 @@
 #!/bin/bash
 #
-# Usage: git feature <name>
+# Usage: git feature start <name>
+# Usage: git feature finish <name>
 set -e
 
+# Defaults
+BRANCHPREFIX=$(git config --get oneflow.prefix.feature)
+BRANCHFROM=$(git config --get oneflow.branch.next)
+BRANCH="${BRANCHPREFIX}$2"
+
+# Help function showing usage of the command
 usage() {
     echo -e "Usage:\n\tgit feature start <name>"
     echo -e "\tgit feature finish <name>"
 }
+
+# merges feature branch into develop.
+function createFeature {
+    git checkout "$BRANCH"
+    git rebase -i "$BRANCHFROM"
+    git checkout "$BRANCHFROM"
+    git merge --no-ff "$BRANCH"
+    git push origin "$BRANCHFROM"
+    git branch -d "$BRANCH"
+}
+
 
 function featureBranch {
 
@@ -14,11 +32,6 @@ function featureBranch {
         usage
         exit 0
     fi
-
-
-    BRANCHPREFIX=$(git config --get oneflow.prefix.feature)
-    MAINBRANCH=$(git config --get oneflow.branch.main)
-    BRANCH="${BRANCHPREFIX}$2"
 
     case "$1" in
         start)
@@ -28,7 +41,7 @@ function featureBranch {
 
             else
                 if ! git status --porcelain ; then
-                    git co -b "$BRANCH" "$MAINBRANCH"
+                    git checkout -b "$BRANCH" "$BRANCHFROM"
                 else
                     echo "Your working directory is dirty."
                     git status
@@ -40,12 +53,7 @@ function featureBranch {
         finish)
 
             if ! git status --porcelain ; then
-                git checkout "$BRANCH"
-                git rebase -i "$MAINBRANCH"
-                git checkout "$MAINBRANCH"
-                git merge --no-ff "$BRANCH"
-                git push origin "$MAINBRANCH"
-                git branch -d "$BRANCH"
+                createFeature
             else
                 echo "Your working directory is dirty."
                 git status
