@@ -1,0 +1,76 @@
+#!/bin/bash
+#
+# Usage: git hotfix start <version>
+# Usage: git hotfix finish <version>
+set -e
+
+# Defaults
+BRANCHPREFIX=$(git config --get oneflow.prefix.hotfix)
+BRANCHFROM=$(git config --get oneflow.branch.main)
+BRANCHNEXT=$(git config --get oneflow.branch.next)
+VERSIONPREFIX=$(git config --get oneflow.prefix.version)
+VERSIONTAG=${VERSIONPREFIX}$2
+BRANCH="${BRANCHPREFIX}${VERSIONTAG}"
+
+# Help function showing usage of the command
+usage() {
+    echo -e "Usage:\n\tgit hotfix start <version>"
+    echo -e "\tgit hotfix finish <version>"
+}
+
+# merges hotfix branch into develop.
+function createHotfix {
+    git checkout "$BRANCH"
+    git tag -a "$VERSIONTAG" -m "Create hotfix $VERSIONTAG"
+    git checkout "$BRANCHNEXT"
+    git merge "$BRANCH"
+    git push --tags origin "$BRANCHNEXT"
+    git branch -d "$BRANCH"
+    git checkout "$BRANCHFROM"
+    git merge --ff-only "$VERSIONTAG"
+}
+
+function hotfixBranch {
+
+    if [ -z "$2" ] ; then
+        usage
+        exit 0
+    fi
+
+    case "$1" in
+        start)
+            if git rev-parse --quiet --verify "$BRANCH" ; then
+                echo "Branch $BRANCH already exists!"
+                exit 0
+
+            else
+                if ! git status --porcelain ; then
+                    git checkout -b "$BRANCH" "$BRANCHFROM"
+                else
+                    echo "Your working directory is dirty."
+                    git status
+                fi
+            fi
+            exit
+            ;;
+
+        finish)
+
+            if ! git status --porcelain ; then
+                createHotfix
+            else
+                echo "Your working directory is dirty."
+                git status
+            fi
+            exit
+            ;;
+
+        *)
+            usage
+            exit
+            ;;
+
+    esac
+}
+
+hotfixBranch "$1" "$2"
