@@ -27,7 +27,23 @@ BRANCHFROM=${3:-$BRANCHFROM}
 # merges release branch into develop and creates
 # fast forward merge into master to create release tag.
 function createRelease {
+
+    # change to the release/v***
     git checkout "$BRANCH"
+
+    # write a changelog if wanted
+    read -p -r "Autocreate CHANGELOG.md entry (Y/n)? " autocreateChangelog
+
+    if [ "$autocreateChangelog" == "Y" ]; then
+        writeChangelog
+    fi
+
+    read -p -r "Do you want to edit CHANGELOG.md (Y/n)? " openChangelog
+
+    if [ "$openChangelog" == "Y" ]; then
+        $EDITOR CHANGELOG.md
+    fi
+
     git tag -a "$VERSIONTAG" -m "Create release $VERSIONTAG"
     git checkout "$BRANCHFROM"
     git merge "$BRANCH"
@@ -35,6 +51,32 @@ function createRelease {
     git branch -d "$BRANCH"
     git checkout "$BRANCHRELEASE"
     git merge --ff-only "$VERSIONTAG"
+
+    echo -e "\nRelease $VERSIONTAG successfully created!\n"
+}
+
+function writeChangelog {
+    LASTVERSION=$(git describe --abbrev=0);
+
+    # save log output to tmp release note
+    git log --no-merges --pretty=format:"- %s" "$LASTVERSION"...HEAD > _tmp-release-note.txt;
+
+    # start version headline in tmp release message
+    echo "## ${VERSIONTAG}" > _tmp-release-message.md;
+    cat _tmp-release-note.txt >> _tmp-release-message.md;
+    echo -e "\n" >> _tmp-release-message.md;
+
+    # add old changelog data
+    cat CHANGELOG.md >> _tmp-release-message.md;
+
+    # overwrite changelog
+    mv _tmp-release-message.md CHANGELOG.md;
+
+    # commit changelog
+    git add CHANGELOG.md && git commit -m "Update CHANGELOG for ${VERSIONTAG}";
+
+    # remove tmp note
+    rm _tmp-release-note.txt
 }
 
 # Help function showing usage of the command
