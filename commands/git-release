@@ -1,7 +1,7 @@
 #!/bin/bash
-#
-# Usage: git release start <version> [commit]
-# Usage: git release finish <version>
+# shellcheck disable=SC2063,SC2129,SC2181,SC2162
+# Usage: git release start [version] [commit]
+# Usage: git release finish [version]
 
 # subcommand of git release
 CMD=${1:-start}
@@ -13,37 +13,69 @@ BRANCHRELEASE=$(git config --get oneflow.branch.main)
 VERSIONPREFIX=$(git config --get oneflow.prefix.version)
 
 # build final versiontag name and branch name
-VERSIONTAG=${VERSIONPREFIX}$2
+VERSIONNUMBER=$2
+VERSIONTAG=${VERSIONPREFIX}$VERSIONNUMBER
 BRANCH="${BRANCHPREFIX}${VERSIONTAG}"
 
 # tests for a clean state
 WORKINGDIRDIRTY=$(git status --porcelain)
 BRANCHEXISTS=$(git rev-parse --quiet --verify "$BRANCH")
+CURRENTBRANCH=$(git branch | grep \* | cut -d ' ' -f2)
 
-# third parameter in release start <version> [commit]
+# third parameter in release start [version] [commit]
 # is used as a reference to branch off from.
 BRANCHFROM=${3:-$BRANCHFROM}
 
 # merges release branch into develop and creates
 # fast forward merge into master to create release tag.
-function createRelease {
+function finishRelease {
 
-    # change to the release/v***
-    git checkout "$BRANCH"
+    # assume current branch is a release/ branch
+    #  if no version number is given
+    if [ -z "$VERSIONNUMBER" ]; then
+
+        # use current branch as the target
+        BRANCH=$CURRENTBRANCH
+
+        # extract version tag from release/vX.X.X branch
+        VERSIONTAG=${BRANCH/"$BRANCHPREFIX"/''}
+
+        # Make sure the branch starts with the release/ prefix
+        # otherwise abort and force manual usage over [version] parameter.
+        if [[ ! "$BRANCH" =~ $BRANCHPREFIX ]]; then
+            echo -e "\nERR: Couldn't find the right release branch.\n"
+            echo -e "Please give either a version name like this:"
+            echo -e "=> git release finish 1.5.0"
+            echo -e "or checkout the branch you want to finish.\n"
+            usage
+            exit 1
+        fi
+    fi
+
+    if [ ! "$BRANCH" == "$CURRENTBRANCH" ]; then
+        # change to the release/v***
+        git checkout "$BRANCH"
+    fi
+
+    echo -e "\nRelease: $BRANCH"
+    echo -e "Version tag: $VERSIONTAG\n"
 
     # write a changelog if wanted
-    read -p -r "Autocreate CHANGELOG.md entry (Y/n)? " autocreateChangelog
+    read -p "Autocreate CHANGELOG.md entry (Y/n)? " autocreateChangelog
 
     if [ "$autocreateChangelog" == "Y" ]; then
         writeChangelog
     fi
 
-    read -p -r "Do you want to edit CHANGELOG.md (Y/n)? " openChangelog
+    echo -e "\n"
+
+    read -p "Do you want to edit CHANGELOG.md (Y/n)? " openChangelog
 
     if [ "$openChangelog" == "Y" ]; then
-        $EDITOR CHANGELOG.md
+        nano CHANGELOG.md
     fi
 
+    echo ""
     git tag -a "$VERSIONTAG" -m "Create release $VERSIONTAG"
     git checkout "$BRANCHFROM"
     git merge "$BRANCH"
@@ -52,10 +84,20 @@ function createRelease {
     git checkout "$BRANCHRELEASE"
     git merge --ff-only "$VERSIONTAG"
 
-    echo -e "\nRelease $VERSIONTAG successfully created!\n"
+    if [ $? -eq 0 ]; then
+        echo -e "\nRelease $VERSIONTAG successfully created!\n"
+    else
+        echo -e "\nERR: Problems occured during creation of release $VERSIONTAG\n"
+    fi
 }
 
+# Automatically prepends an entry in the CHANGELOG.md file based on
+# the commit messages between the last release tag.
+# Will prompt the user if they want to autocreate the entry and if they
+# want to manually edit it afterwards.
 function writeChangelog {
+
+    # get last annotated tag (= version tags)
     LASTVERSION=$(git describe --abbrev=0);
 
     # save log output to tmp release note
@@ -72,8 +114,17 @@ function writeChangelog {
     # overwrite changelog
     mv _tmp-release-message.md CHANGELOG.md;
 
+    # blank divider
+    echo -e "\n"
+
     # commit changelog
     git add CHANGELOG.md && git commit -m "Update CHANGELOG for ${VERSIONTAG}";
+
+    # tell user our success
+    echo -e "\nSuccessfully added changelog entry for $VERSIONTAG."
+    echo "Content:"
+    cat _tmp-release-note.txt
+    echo -e "\n"
 
     # remove tmp note
     rm _tmp-release-note.txt
@@ -81,30 +132,29 @@ function writeChangelog {
 
 # Help function showing usage of the command
 usage() {
-    echo -e "Usage:\n\tgit release start <version> [commit]"
-    echo -e "\tgit release finish <version>"
+    echo -e "Usage:\ngit release finish|start [version] [commit]\n"
 }
 
-# abort if the <version> is missing and show the help
-if [ -z "$2" ] ; then
-    echo "<version> parameter is missing!"
+# abort if the [version] is missing and show the help
+if [ -z "$2" ] && [ ! "$1" == "finish" ] ; then
+    echo -e "\nERR: Parameter missing or command not found!\n"
     usage
-    exit 0
+    exit 1
 fi
 
 # abort if working directory is dirty
 if [ "$WORKINGDIRDIRTY" ] ; then
-    echo "Your working directory is dirty!"
+    echo -e "\nERR: Your working directory is dirty!\n"
     git status
-    exit 0
+    exit 1
 fi
 
 # the main logic handler.
 case "$CMD" in
     start)
         if [ "$BRANCHEXISTS" ] ; then
-            echo "Branch $BRANCH already exists!"
-            exit 0
+            echo -e "\nERR: Branch $BRANCH already exists!\n"
+            exit 1
 
         else
             git checkout -b "$BRANCH" "$BRANCHFROM"
@@ -113,7 +163,7 @@ case "$CMD" in
         ;;
 
     finish)
-        createRelease
+        finishRelease
         exit
         ;;
 

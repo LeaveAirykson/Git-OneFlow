@@ -1,72 +1,106 @@
 #!/bin/bash
-#
-# Usage: git feature start <name>
-# Usage: git feature finish <name>
-set -e
+# shellcheck disable=SC2063,SC2129,SC2181,SC2162
+# Usage: git feature start [name]
+# Usage: git feature finish [name]
 
-# Defaults
+# subcommand of git release
+CMD=${1:-start}
+
+# get the settings from git config
 BRANCHPREFIX=$(git config --get oneflow.prefix.feature)
 BRANCHFROM=$(git config --get oneflow.branch.next)
-BRANCH="${BRANCHPREFIX}$2"
+FEATURENAME=$2
+BRANCH="${BRANCHPREFIX}$FEATURENAME"
+
+# tests for a clean state
+WORKINGDIRDIRTY=$(git status --porcelain)
+BRANCHEXISTS=$(git rev-parse --quiet --verify "$BRANCH")
+CURRENTBRANCH=$(git branch | grep \* | cut -d ' ' -f2)
 
 # Help function showing usage of the command
 usage() {
-    echo -e "Usage:\n\tgit feature start <name>"
-    echo -e "\tgit feature finish <name>"
+    echo -e "Usage:\ngit feature finish|start [name]\n"
 }
 
 # merges feature branch into develop.
-function createFeature {
-    git checkout "$BRANCH"
+function finishFeature {
+
+    # assume current branch is a feature/ branch
+    #  if no feature name is given
+    if [ -z "$FEATURENAME" ]; then
+
+        # use current branch as the target
+        BRANCH=$CURRENTBRANCH
+
+        # extract feature name from feature/[name] branch
+        FEATURENAME=${BRANCH/"$BRANCHPREFIX"/''}
+
+        # Make sure the branch starts with the feature/ prefix
+        # otherwise abort and force manual usage over [name] parameter.
+        if [[ ! "$BRANCH" =~ $BRANCHPREFIX ]]; then
+            echo -e "\nERR: Couldn't find the right feature branch.\n"
+            echo -e "Please give either a name like this:"
+            echo -e "=> git feature finish topnav-menu-fixes"
+            echo -e "or checkout the branch you want to finish.\n"
+            usage
+            exit 1
+        fi
+    fi
+
+    if [ ! "$BRANCH" == "$CURRENTBRANCH" ]; then
+        # change to the release/v***
+        git checkout "$BRANCH"
+    fi
+
+    echo ""
     git rebase -i "$BRANCHFROM"
     git checkout "$BRANCHFROM"
     git merge --no-ff "$BRANCH"
     git push origin "$BRANCHFROM"
     git branch -d "$BRANCH"
-}
 
-
-function featureBranch {
-
-    if [ -z "$2" ] ; then
-        usage
-        exit 0
+    if [ $? -eq 0 ]; then
+        echo -e "\nFeature $FEATURENAME successfully implemented!\n"
+    else
+        echo -e "\nERR: Problems occured during implementation of feature $FEATURENAME\n"
     fi
-
-    case "$1" in
-        start)
-            if git rev-parse --quiet --verify "$BRANCH" ; then
-                echo "Branch $BRANCH already exists!"
-                exit 0
-
-            else
-                if git status --porcelain ; then
-                    echo "Your working directory is dirty."
-                    git status
-                else
-                    git checkout -b "$BRANCH" "$BRANCHFROM"
-                fi
-            fi
-            exit
-            ;;
-
-        finish)
-
-            if git status --porcelain ; then
-                echo "Your working directory is dirty."
-                git status
-            else
-                createFeature
-            fi
-            exit
-            ;;
-
-        *)
-            usage
-            exit
-            ;;
-
-    esac
 }
 
-featureBranch "$1" "$2"
+# abort if the [name] is missing and show the help
+if [ -z "$2" ] && [ ! "$1" == "finish" ] ; then
+    echo -e "\nERR: Parameter missing or command not found!\n"
+    usage
+    exit 1
+fi
+
+# abort if working directory is dirty
+if [ "$WORKINGDIRDIRTY" ] ; then
+    echo -e "\nERR: Your working directory is dirty!\n"
+    git status
+    exit 1
+fi
+
+# the main logic handler.
+case "$CMD" in
+    start)
+        if [ "$BRANCHEXISTS" ] ; then
+            echo -e "\nERR: Branch $BRANCH already exists!\n"
+            exit 1
+
+        else
+            git checkout -b "$BRANCH" "$BRANCHFROM"
+        fi
+        exit
+        ;;
+
+    finish)
+        finishFeature
+        exit
+        ;;
+
+    *)
+        usage
+        exit
+        ;;
+
+esac

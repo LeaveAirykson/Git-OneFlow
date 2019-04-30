@@ -1,76 +1,175 @@
 #!/bin/bash
-#
-# Usage: git hotfix start <version>
-# Usage: git hotfix finish <version>
-set -e
+# shellcheck disable=SC2063,SC2129,SC2181,SC2162
+# Usage: git hotfix start [version] [commit]
+# Usage: git hotfix finish [version]
 
-# Defaults
+# subcommand of git hotfix
+CMD=${1:-start}
+
+# get the settings from git config
 BRANCHPREFIX=$(git config --get oneflow.prefix.hotfix)
-BRANCHFROM=$(git config --get oneflow.branch.main)
-BRANCHNEXT=$(git config --get oneflow.branch.next)
+BRANCHFROM=$(git config --get oneflow.branch.next)
+BRANCHRELEASE=$(git config --get oneflow.branch.main)
 VERSIONPREFIX=$(git config --get oneflow.prefix.version)
-VERSIONTAG=${VERSIONPREFIX}$2
+
+# build final versiontag name and branch name
+VERSIONNUMBER=$2
+VERSIONTAG=${VERSIONPREFIX}$VERSIONNUMBER
 BRANCH="${BRANCHPREFIX}${VERSIONTAG}"
+
+# tests for a clean state
+WORKINGDIRDIRTY=$(git status --porcelain)
+BRANCHEXISTS=$(git rev-parse --quiet --verify "$BRANCH")
+CURRENTBRANCH=$(git branch | grep \* | cut -d ' ' -f2)
+
+# third parameter in hotfix start [version] [commit]
+# is used as a reference to branch off from.
+BRANCHFROM=${3:-$BRANCHFROM}
+
+# merges hotfix branch into develop and creates
+# fast forward merge into master to create hotfix tag.
+function finishHotfix {
+
+    # assume current branch is a hotfix/ branch
+    #  if no version number is given
+    if [ -z "$VERSIONNUMBER" ]; then
+
+        # use current branch as the target
+        BRANCH=$CURRENTBRANCH
+
+        # extract version tag from hotfix/vX.X.X branch
+        VERSIONTAG=${BRANCH/"$BRANCHPREFIX"/''}
+
+        # Make sure the branch starts with the hotfix/ prefix
+        # otherwise abort and force manual usage over [version] parameter.
+        if [[ ! "$BRANCH" =~ $BRANCHPREFIX ]]; then
+            echo -e "\nERR: Couldn't find the right hotfix branch.\n"
+            echo -e "Please give either a version name like this:"
+            echo -e "=> git hotfix finish 1.5.0"
+            echo -e "or checkout the branch you want to finish.\n"
+            usage
+            exit 1
+        fi
+    fi
+
+    if [ ! "$BRANCH" == "$CURRENTBRANCH" ]; then
+        # change to the hotfix/v***
+        git checkout "$BRANCH"
+    fi
+
+    echo -e "\nHotfix: $BRANCH"
+    echo -e "Version tag: $VERSIONTAG\n"
+
+    # write a changelog if wanted
+    read -p "Autocreate CHANGELOG.md entry (Y/n)? " autocreateChangelog
+
+    if [ "$autocreateChangelog" == "Y" ]; then
+        writeChangelog
+    fi
+
+    echo -e "\n"
+
+    read -p "Do you want to edit CHANGELOG.md (Y/n)? " openChangelog
+
+    if [ "$openChangelog" == "Y" ]; then
+        nano CHANGELOG.md
+    fi
+
+    echo ""
+    git tag -a "$VERSIONTAG" -m "Create hotfix $VERSIONTAG"
+    git checkout "$BRANCHFROM"
+    git merge "$BRANCH"
+    git push --tags origin "$BRANCHFROM"
+    git branch -d "$BRANCH"
+    git checkout "$BRANCHRELEASE"
+    git merge --ff-only "$VERSIONTAG"
+
+    if [ $? -eq 0 ]; then
+        echo -e "\nHotfix $VERSIONTAG successfully created!\n"
+    else
+        echo -e "\nERR: Problems occured during creation of hotfix $VERSIONTAG\n"
+    fi
+}
+
+# Automatically prepends an entry in the CHANGELOG.md file based on
+# the commit messages between the last hotfix tag.
+# Will prompt the user if they want to autocreate the entry and if they
+# want to manually edit it afterwards.
+function writeChangelog {
+
+    # get last annotated tag (= version tags)
+    LASTVERSION=$(git describe --abbrev=0);
+
+    # save log output to tmp hotfix note
+    git log --no-merges --pretty=format:"- %s" "$LASTVERSION"...HEAD > _tmp-hotfix-note.txt;
+
+    # start version headline in tmp hotfix message
+    echo "## ${VERSIONTAG}" > _tmp-hotfix-message.md;
+    cat _tmp-hotfix-note.txt >> _tmp-hotfix-message.md;
+    echo -e "\n" >> _tmp-hotfix-message.md;
+
+    # add old changelog data
+    cat CHANGELOG.md >> _tmp-hotfix-message.md;
+
+    # overwrite changelog
+    mv _tmp-hotfix-message.md CHANGELOG.md;
+
+    # blank divider
+    echo -e "\n"
+
+    # commit changelog
+    git add CHANGELOG.md && git commit -m "Update CHANGELOG for ${VERSIONTAG}";
+
+    # tell user our success
+    echo -e "\nSuccessfully added changelog entry for $VERSIONTAG."
+    echo "Content:"
+    cat _tmp-hotfix-note.txt
+    echo -e "\n"
+
+    # remove tmp note
+    rm _tmp-hotfix-note.txt
+}
 
 # Help function showing usage of the command
 usage() {
-    echo -e "Usage:\n\tgit hotfix start <version>"
-    echo -e "\tgit hotfix finish <version>"
+    echo -e "Usage:\ngit hotfix finish|start [version] [commit]\n"
 }
 
-# merges hotfix branch into develop.
-function createHotfix {
-    git checkout "$BRANCH"
-    git tag -a "$VERSIONTAG" -m "Create hotfix $VERSIONTAG"
-    git checkout "$BRANCHNEXT"
-    git merge "$BRANCH"
-    git push --tags origin "$BRANCHNEXT"
-    git branch -d "$BRANCH"
-    git checkout "$BRANCHFROM"
-    git merge --ff-only "$VERSIONTAG"
-}
+# abort if the [version] is missing and show the help
+if [ -z "$2" ] && [ ! "$1" == "finish" ] ; then
+    echo -e "\nERR: Parameter missing or command not found!\n"
+    usage
+    exit 1
+fi
 
-function hotfixBranch {
+# abort if working directory is dirty
+if [ "$WORKINGDIRDIRTY" ] ; then
+    echo -e "\nERR: Your working directory is dirty!\n"
+    git status
+    exit 1
+fi
 
-    if [ -z "$2" ] ; then
+# the main logic handler.
+case "$CMD" in
+    start)
+        if [ "$BRANCHEXISTS" ] ; then
+            echo -e "\nERR: Branch $BRANCH already exists!\n"
+            exit 1
+
+        else
+            git checkout -b "$BRANCH" "$BRANCHFROM"
+        fi
+        exit
+        ;;
+
+    finish)
+        finishHotfix
+        exit
+        ;;
+
+    *)
         usage
-        exit 0
-    fi
+        exit
+        ;;
 
-    case "$1" in
-        start)
-            if git rev-parse --quiet --verify "$BRANCH" ; then
-                echo "Branch $BRANCH already exists!"
-                exit 0
-
-            else
-                if git status --porcelain ; then
-                    echo "Your working directory is dirty."
-                    git status
-                else
-                    git checkout -b "$BRANCH" "$BRANCHFROM"
-                fi
-            fi
-            exit
-            ;;
-
-        finish)
-
-            if git status --porcelain ; then
-                echo "Your working directory is dirty."
-                git status
-            else
-                createHotfix
-            fi
-            exit
-            ;;
-
-        *)
-            usage
-            exit
-            ;;
-
-    esac
-}
-
-hotfixBranch "$1" "$2"
+esac
