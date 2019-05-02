@@ -1,7 +1,8 @@
 #!/bin/bash
 # shellcheck disable=SC2063,SC2129,SC2181,SC2162
-# Usage: git release start [version] [commit]
-# Usage: git release finish [version]
+# Usage:
+# git release start|s [version] [commit]
+# git release finish|f [version]
 
 # subcommand of git release
 CMD=${1:-start}
@@ -25,6 +26,12 @@ CURRENTBRANCH=$(git branch | grep \* | cut -d ' ' -f2)
 # third parameter in release start [version] [commit]
 # is used as a reference to branch off from.
 BRANCHFROM=${3:-$BRANCHFROM}
+
+# Help function showing usage of the command
+usage() {
+    echo -e "Usage:\ngit release start|s [version] [commit]\n"
+    echo -e "git release finish|f [version] [commit]\n"
+}
 
 # merges release branch into develop and creates
 # fast forward merge into master to create release tag.
@@ -130,13 +137,8 @@ function writeChangelog {
     rm _tmp-release-note.txt
 }
 
-# Help function showing usage of the command
-usage() {
-    echo -e "Usage:\ngit release finish|start [version] [commit]\n"
-}
-
 # abort if the [version] is missing and show the help
-if [ -z "$2" ] && [ ! "$1" == "finish" ] ; then
+if [ -z "$2" ] && [ ! "$CMD" == "finish" ] ; then
     echo -e "\nERR: Parameter missing or command not found!\n"
     usage
     exit 1

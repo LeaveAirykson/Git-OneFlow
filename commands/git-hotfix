@@ -1,10 +1,25 @@
 #!/bin/bash
 # shellcheck disable=SC2063,SC2129,SC2181,SC2162
-# Usage: git hotfix start [version] [commit]
-# Usage: git hotfix finish [version]
+# Usage:
+# git hotfix start|s [version] [commit]
+# git hotfix finish|f [version]
 
-# subcommand of git hotfix
+# Set default subcommand
 CMD=${1:-start}
+
+# make sure the aliases trigger the right
+# subcommand
+case "$CMD" in
+    s)
+        CMD='start'
+        exit
+        ;;
+
+    f)
+        CMD='finish'
+        exit
+        ;;
+esac
 
 # get the settings from git config
 BRANCHPREFIX=$(git config --get oneflow.prefix.hotfix)
@@ -25,6 +40,12 @@ CURRENTBRANCH=$(git branch | grep \* | cut -d ' ' -f2)
 # third parameter in hotfix start [version] [commit]
 # is used as a reference to branch off from.
 BRANCHFROM=${3:-$BRANCHFROM}
+
+# Help function showing usage of the command
+usage() {
+    echo -e "Usage:\ngit hotfix start|s [version] [commit]"
+    echo -e "git hotfix finish|f [name]\n"
+}
 
 # merges hotfix branch into develop and creates
 # fast forward merge into master to create hotfix tag.
@@ -130,13 +151,8 @@ function writeChangelog {
     rm _tmp-hotfix-note.txt
 }
 
-# Help function showing usage of the command
-usage() {
-    echo -e "Usage:\ngit hotfix finish|start [version] [commit]\n"
-}
-
 # abort if the [version] is missing and show the help
-if [ -z "$2" ] && [ ! "$1" == "finish" ] ; then
+if [ -z "$2" ] && [ ! "$CMD" == "finish" ] ; then
     echo -e "\nERR: Parameter missing or command not found!\n"
     usage
     exit 1
