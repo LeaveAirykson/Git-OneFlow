@@ -7,6 +7,20 @@
 # subcommand of git release
 CMD=${1:-start}
 
+# make sure the aliases trigger the right
+# subcommand
+case "$CMD" in
+    s)
+        CMD='start'
+        exit
+        ;;
+
+    f)
+        CMD='finish'
+        exit
+        ;;
+esac
+
 # get the settings from git config
 BRANCHPREFIX=$(git config --get oneflow.prefix.release)
 BRANCHFROM=$(git config --get oneflow.branch.next)
