@@ -12,12 +12,10 @@ CMD=${1:-start}
 case "$CMD" in
     s)
         CMD='start'
-        exit
         ;;
 
     f)
         CMD='finish'
-        exit
         ;;
 esac
 
