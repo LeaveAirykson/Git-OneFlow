@@ -76,10 +76,19 @@ function finishHotfix {
         git checkout "$BRANCH"
     fi
 
-    echo -e "\nHotfix: $BRANCH"
+    echo -e "\nRelease: $BRANCH"
     echo -e "Version tag: $VERSIONTAG\n"
 
+    # merge release into develop
+    git checkout "$BRANCHFROM"
+    git merge "$BRANCH"
+
+    # squash merge develop into master
+    git checkout "$BRANCHRELEASE"
+    git merge --squash "$BRANCHFROM"
+
     # write a changelog if wanted
+    echo ""
     read -p "Autocreate CHANGELOG.md entry (Y/n)? " autocreateChangelog
 
     if [ "$autocreateChangelog" == "Y" ]; then
@@ -94,59 +103,58 @@ function finishHotfix {
         nano CHANGELOG.md
     fi
 
-    echo ""
-    git tag -a "$VERSIONTAG" -m "Create hotfix $VERSIONTAG"
-    git checkout "$BRANCHFROM"
-    git merge "$BRANCH"
-    git push --tags origin "$BRANCHFROM"
-    git branch -d "$BRANCH"
-    git checkout "$BRANCHRELEASE"
-    git merge --ff-only "$VERSIONTAG"
+    # Create final commit with updated changelog on master
+    git add CHANGELOG.md
+    git commit -m "Release $VERSIONTAG"
+
+    # Remove release branch as its fully merged into develop
+    git branch -D "$BRANCH"
+
+    # Create version tag on develop
+    git tag -a "$VERSIONTAG" "$BRANCHFROM" -m "Create release $VERSIONTAG"
+
+    # only push new release if remote exists
+    if git ls-remote; then
+        git push --tags origin "$BRANCHFROM"
+    fi
 
     if [ $? -eq 0 ]; then
-        echo -e "\nHotfix $VERSIONTAG successfully created!\n"
+        echo -e "\nRelease $VERSIONTAG successfully created!\n"
     else
-        echo -e "\nERR: Problems occured during creation of hotfix $VERSIONTAG\n"
+        echo -e "\nERR: Problems occured during creation of release $VERSIONTAG\n"
     fi
 }
 
 # Automatically prepends an entry in the CHANGELOG.md file based on
-# the commit messages between the last hotfix tag.
+# the commit messages between the last release tag.
 # Will prompt the user if they want to autocreate the entry and if they
 # want to manually edit it afterwards.
 function writeChangelog {
 
     # get last annotated tag (= version tags)
-    LASTVERSION=$(git describe --abbrev=0);
+    LASTVERSION=$(git describe --abbrev=0 "$BRANCHFROM");
 
-    # save log output to tmp hotfix note
-    git log --no-merges --pretty=format:"- %s" "$LASTVERSION"...HEAD > _tmp-hotfix-note.txt;
+    # save log output to tmp release note
+    git log --merges --pretty=format:"- %s" "$LASTVERSION"..."$BRANCHFROM" > _tmp-release-note.txt;
 
-    # start version headline in tmp hotfix message
-    echo "## ${VERSIONTAG}" > _tmp-hotfix-message.md;
-    cat _tmp-hotfix-note.txt >> _tmp-hotfix-message.md;
-    echo -e "\n" >> _tmp-hotfix-message.md;
+    # start version headline in tmp release message
+    echo "## ${VERSIONTAG}" > _tmp-release-message.md;
+    cat _tmp-release-note.txt >> _tmp-release-message.md;
+    echo -e "\n" >> _tmp-release-message.md;
 
     # add old changelog data
-    cat CHANGELOG.md >> _tmp-hotfix-message.md;
+    cat CHANGELOG.md >> _tmp-release-message.md;
 
     # overwrite changelog
-    mv _tmp-hotfix-message.md CHANGELOG.md;
-
-    # blank divider
-    echo -e "\n"
-
-    # commit changelog
-    git add CHANGELOG.md && git commit -m "Update CHANGELOG for ${VERSIONTAG}";
+    mv _tmp-release-message.md CHANGELOG.md;
 
     # tell user our success
     echo -e "\nSuccessfully added changelog entry for $VERSIONTAG."
     echo "Content:"
-    cat _tmp-hotfix-note.txt
-    echo -e "\n"
+    cat _tmp-release-note.txt
 
     # remove tmp note
-    rm _tmp-hotfix-note.txt
+    rm _tmp-release-note.txt
 }
 
 # abort if the [version] is missing and show the help

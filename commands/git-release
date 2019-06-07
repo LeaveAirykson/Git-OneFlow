@@ -4,7 +4,7 @@
 # git release start|s [version] [commit]
 # git release finish|f [version]
 
-# subcommand of git release
+# Set default subcommand
 CMD=${1:-start}
 
 # make sure the aliases trigger the right
@@ -79,7 +79,16 @@ function finishRelease {
     echo -e "\nRelease: $BRANCH"
     echo -e "Version tag: $VERSIONTAG\n"
 
-    # write a changelog if wanted
+    # merge release into develop
+    git checkout "$BRANCHFROM"
+    git merge "$BRANCH"
+
+    # squash merge develop into master
+    git checkout "$BRANCHRELEASE"
+    git merge --squash "$BRANCHFROM"
+
+    # write a changelog if needed
+    echo ""
     read -p "Autocreate CHANGELOG.md entry (Y/n)? " autocreateChangelog
 
     if [ "$autocreateChangelog" == "Y" ]; then
@@ -94,14 +103,20 @@ function finishRelease {
         nano CHANGELOG.md
     fi
 
-    echo ""
-    git tag -a "$VERSIONTAG" -m "Create release $VERSIONTAG"
-    git checkout "$BRANCHFROM"
-    git merge "$BRANCH"
-    git push --tags origin "$BRANCHFROM"
-    git branch -d "$BRANCH"
-    git checkout "$BRANCHRELEASE"
-    git merge --ff-only "$VERSIONTAG"
+    # Create final commit with updated changelog on master
+    git add CHANGELOG.md
+    git commit -m "Release $VERSIONTAG"
+
+    # Remove release branch as its fully merged into develop
+    git branch -D "$BRANCH"
+
+    # Create version tag on develop
+    git tag -a "$VERSIONTAG" "$BRANCHFROM" -m "Create release $VERSIONTAG"
+
+    # only push new release if remote exists
+    if git ls-remote; then
+        git push --tags origin "$BRANCHFROM"
+    fi
 
     if [ $? -eq 0 ]; then
         echo -e "\nRelease $VERSIONTAG successfully created!\n"
@@ -117,10 +132,10 @@ function finishRelease {
 function writeChangelog {
 
     # get last annotated tag (= version tags)
-    LASTVERSION=$(git describe --abbrev=0);
+    LASTVERSION=$(git describe --abbrev=0 "$BRANCHFROM");
 
     # save log output to tmp release note
-    git log --no-merges --pretty=format:"- %s" "$LASTVERSION"...HEAD > _tmp-release-note.txt;
+    git log --merges --pretty=format:"- %s" "$LASTVERSION"..."$BRANCHFROM" > _tmp-release-note.txt;
 
     # start version headline in tmp release message
     echo "## ${VERSIONTAG}" > _tmp-release-message.md;
@@ -133,17 +148,10 @@ function writeChangelog {
     # overwrite changelog
     mv _tmp-release-message.md CHANGELOG.md;
 
-    # blank divider
-    echo -e "\n"
-
-    # commit changelog
-    git add CHANGELOG.md && git commit -m "Update CHANGELOG for ${VERSIONTAG}";
-
     # tell user our success
     echo -e "\nSuccessfully added changelog entry for $VERSIONTAG."
     echo "Content:"
     cat _tmp-release-note.txt
-    echo -e "\n"
 
     # remove tmp note
     rm _tmp-release-note.txt

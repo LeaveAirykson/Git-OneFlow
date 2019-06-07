@@ -67,11 +67,14 @@ function finishFeature {
     fi
 
     echo ""
-    git rebase -i "$BRANCHFROM"
     git checkout "$BRANCHFROM"
-    git merge --no-ff "$BRANCH"
-    git push origin "$BRANCHFROM"
+    git merge --no-ff "$BRANCH" -m "Implement feature '$FEATURENAME'"
     git branch -d "$BRANCH"
+
+    # only push changes if remote exists
+    if git ls-remote; then
+        git push --tags origin "$BRANCHFROM"
+    fi
 
     if [ $? -eq 0 ]; then
         echo -e "\nFeature $FEATURENAME successfully implemented!\n"
