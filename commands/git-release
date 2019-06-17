@@ -1,21 +1,16 @@
 #!/bin/bash
 # shellcheck disable=SC2063,SC2129,SC2181,SC2162
 # Usage:
-# git release start|s [version] [commit]
-# git release finish|f [version]
+# git release create|c [version] [commit]
 
 # Set default subcommand
-CMD=${1:-start}
+CMD=${1:-create}
 
 # make sure the aliases trigger the right
 # subcommand
 case "$CMD" in
-    s)
-        CMD='start'
-        ;;
-
-    f)
-        CMD='finish'
+    c)
+        CMD='create'
         ;;
 esac
 
@@ -41,13 +36,12 @@ BRANCHFROM=${3:-$BRANCHFROM}
 
 # Help function showing usage of the command
 usage() {
-    echo -e "Usage:\ngit release start|s [version] [commit]\n"
-    echo -e "git release finish|f [version] [commit]\n"
+    echo -e "Usage:\ngit release create|c [version] [commit]\n"
 }
 
 # merges release branch into develop and creates
 # fast forward merge into master to create release tag.
-function finishRelease {
+function createRelease {
 
     # assume current branch is a release/ branch
     #  if no version number is given
@@ -71,21 +65,11 @@ function finishRelease {
         fi
     fi
 
-    if [ ! "$BRANCH" == "$CURRENTBRANCH" ]; then
-        # change to the release/v***
-        git checkout "$BRANCH"
-    fi
-
     echo -e "\nRelease: $BRANCH"
     echo -e "Version tag: $VERSIONTAG\n"
 
-    # merge release into develop
-    git checkout "$BRANCHFROM"
-    git merge "$BRANCH"
-
-    # squash merge develop into master
-    git checkout "$BRANCHRELEASE"
-    git merge "$BRANCHFROM"
+    # temporarily create a release/vxxx branch
+    git checkout -b "$BRANCH" "$BRANCHFROM"
 
     # write a changelog if needed
     echo ""
@@ -107,10 +91,14 @@ function finishRelease {
     git add CHANGELOG.md
     git commit -m "Release $VERSIONTAG"
 
-    # Remove release branch as its fully merged into develop
-    git branch -D "$BRANCH"
+    # merge release/vxxx into master
+    git checkout "$BRANCHRELEASE"
+    git merge "$BRANCH"
 
-    # Create version tag on develop
+    # Remove release branch as its fully merged into master
+    git branch -d "$BRANCH"
+
+    # Create version tag on master
     git tag -a "$VERSIONTAG" "$BRANCHFROM" -m "Create release $VERSIONTAG"
 
     # only push new release if remote exists
@@ -173,19 +161,9 @@ fi
 
 # the main logic handler.
 case "$CMD" in
-    start)
-        if [ "$BRANCHEXISTS" ] ; then
-            echo -e "\nERR: Branch $BRANCH already exists!\n"
-            exit 1
 
-        else
-            git checkout -b "$BRANCH" "$BRANCHFROM"
-        fi
-        exit
-        ;;
-
-    finish)
-        finishRelease
+    create)
+        createRelease
         exit
         ;;
 
