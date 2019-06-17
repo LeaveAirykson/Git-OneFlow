@@ -89,7 +89,7 @@ function createRelease {
 
     # Create final commit with updated changelog
     git add CHANGELOG.md
-    git commit -m "Release $VERSIONTAG"
+    git commit -m "Add release notes for $VERSIONTAG"
 
     # merge release/vxxx into master
     git checkout "$BRANCHFROM"
@@ -98,12 +98,12 @@ function createRelease {
     # Remove release branch as its fully merged into master
     git branch -d "$BRANCH"
 
-    # Create version tag on master
-    git tag -a "$VERSIONTAG" "$BRANCHFROM" -m "Create release $VERSIONTAG"
-
     # update master with release changes from develop
     git checkout "$BRANCHRELEASE"
-    git merge "$BRANCHFROM"
+    git merge "$BRANCHFROM" -m "Release $VERSIONTAG"
+
+    # Create version tag on master
+    git tag -a "$VERSIONTAG" "$BRANCHFROM" -m "Release $VERSIONTAG"
 
     # only push new release if remote exists
     if git ls-remote; then
@@ -127,7 +127,7 @@ function writeChangelog {
     LASTVERSION=$(git describe --abbrev=0 "$BRANCHFROM");
 
     # save log output to tmp release note
-    git log --merges --pretty=format:"- %s" "$LASTVERSION"..."$BRANCHFROM" > _tmp-release-note.txt;
+    git log --pretty=format:"- %s" "$LASTVERSION"..."$BRANCHFROM" > _tmp-release-note.txt;
 
     # start version headline in tmp release message
     echo "## ${VERSIONTAG}" > _tmp-release-message.md;
