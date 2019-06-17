@@ -65,11 +65,11 @@ function createRelease {
         fi
     fi
 
-    echo -e "\nRelease: $BRANCH"
-    echo -e "Version tag: $VERSIONTAG\n"
-
     # temporarily create a release/vxxx branch
     git checkout -b "$BRANCH" "$BRANCHFROM"
+
+    echo -e "\nRelease: $BRANCH"
+    echo -e "Version tag: $VERSIONTAG\n"
 
     # write a changelog if needed
     echo ""
@@ -87,12 +87,12 @@ function createRelease {
         nano CHANGELOG.md
     fi
 
-    # Create final commit with updated changelog on master
+    # Create final commit with updated changelog
     git add CHANGELOG.md
     git commit -m "Release $VERSIONTAG"
 
     # merge release/vxxx into master
-    git checkout "$BRANCHRELEASE"
+    git checkout "$BRANCHFROM"
     git merge "$BRANCH"
 
     # Remove release branch as its fully merged into master
@@ -100,6 +100,10 @@ function createRelease {
 
     # Create version tag on master
     git tag -a "$VERSIONTAG" "$BRANCHFROM" -m "Create release $VERSIONTAG"
+
+    # update master with release changes from develop
+    git checkout "$BRANCHRELEASE"
+    git merge "$BRANCHFROM"
 
     # only push new release if remote exists
     if git ls-remote; then
