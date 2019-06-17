@@ -63,7 +63,7 @@ function finishFeature {
 
     echo ""
     git checkout "$BRANCHFROM"
-    git merge "$BRANCH"
+    git merge --squash "$BRANCH"
     git commit -m "Implement feature '$FEATURENAME'"
     git branch -D "$BRANCH"
 
