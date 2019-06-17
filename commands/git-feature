@@ -61,20 +61,11 @@ function finishFeature {
         fi
     fi
 
-    if [ ! "$BRANCH" == "$CURRENTBRANCH" ]; then
-        # change to the release/v***
-        git checkout "$BRANCH"
-    fi
-
     echo ""
     git checkout "$BRANCHFROM"
-    git merge --squash "$BRANCH" -m "Implement feature '$FEATURENAME'"
-    git branch -d "$BRANCH"
-
-    # only push changes if remote exists
-    if git ls-remote; then
-        git push --tags origin "$BRANCHFROM"
-    fi
+    git merge --squash "$BRANCH"
+    git commit -m "Implement feature '$FEATURENAME'"
+    git branch -D "$BRANCH"
 
     if [ $? -eq 0 ]; then
         echo -e "\nFeature $FEATURENAME successfully implemented!\n"
