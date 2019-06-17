@@ -107,7 +107,7 @@ function createRelease {
 
     # only push new release if remote exists
     if git ls-remote; then
-        git push --tags origin "$BRANCHFROM"
+        git push origin "$VERSIONTAG"
     fi
 
     if [ $? -eq 0 ]; then
