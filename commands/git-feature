@@ -68,7 +68,7 @@ function finishFeature {
 
     echo ""
     git checkout "$BRANCHFROM"
-    git merge --no-ff "$BRANCH" -m "Implement feature '$FEATURENAME'"
+    git merge --squash "$BRANCH" -m "Implement feature '$FEATURENAME'"
     git branch -d "$BRANCH"
 
     # only push changes if remote exists

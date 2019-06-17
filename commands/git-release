@@ -85,7 +85,7 @@ function finishRelease {
 
     # squash merge develop into master
     git checkout "$BRANCHRELEASE"
-    git merge --squash "$BRANCHFROM"
+    git merge "$BRANCHFROM"
 
     # write a changelog if needed
     echo ""
