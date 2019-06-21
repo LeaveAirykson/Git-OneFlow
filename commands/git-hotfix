@@ -1,8 +1,8 @@
 #!/bin/bash
 # shellcheck disable=SC2063,SC2129,SC2181,SC2162
 # Usage:
-# git hotfix start|s [version] [commit]
-# git hotfix finish|f [version]
+# git hotfix start|s [name]
+# git hotfix finish|f [name]
 
 # Set default subcommand
 CMD=${1:-start}
@@ -22,142 +22,58 @@ esac
 # get the settings from git config
 BRANCHPREFIX=$(git config --get oneflow.prefix.hotfix)
 BRANCHFROM=$(git config --get oneflow.branch.next)
-BRANCHRELEASE=$(git config --get oneflow.branch.main)
-VERSIONPREFIX=$(git config --get oneflow.prefix.version)
-
-# build final versiontag name and branch name
-VERSIONNUMBER=$2
-VERSIONTAG=${VERSIONPREFIX}$VERSIONNUMBER
-BRANCH="${BRANCHPREFIX}${VERSIONTAG}"
+HOTFIXNAME=$2
+BRANCH="${BRANCHPREFIX}$HOTFIXNAME"
 
 # tests for a clean state
 WORKINGDIRDIRTY=$(git status --porcelain)
 BRANCHEXISTS=$(git rev-parse --quiet --verify "$BRANCH")
 CURRENTBRANCH=$(git branch | grep \* | cut -d ' ' -f2)
 
-# third parameter in hotfix start [version] [commit]
-# is used as a reference to branch off from.
-BRANCHFROM=${3:-$BRANCHFROM}
-
 # Help function showing usage of the command
 usage() {
-    echo -e "Usage:\ngit hotfix start|s [version] [commit]"
+    echo -e "Usage:\ngit hotfix start|s [name]"
     echo -e "git hotfix finish|f [name]\n"
 }
 
-# merges hotfix branch into develop and creates
-# fast forward merge into master to create hotfix tag.
+# merges hotfix branch into develop.
 function finishHotfix {
 
     # assume current branch is a hotfix/ branch
-    #  if no version number is given
-    if [ -z "$VERSIONNUMBER" ]; then
+    #  if no hotfix name is given
+    if [ -z "$HOTFIXNAME" ]; then
 
         # use current branch as the target
         BRANCH=$CURRENTBRANCH
 
-        # extract version tag from hotfix/vX.X.X branch
-        VERSIONTAG=${BRANCH/"$BRANCHPREFIX"/''}
+        # extract hotfix name from hotfix/[name] branch
+        HOTFIXNAME=${BRANCH/"$BRANCHPREFIX"/''}
 
         # Make sure the branch starts with the hotfix/ prefix
-        # otherwise abort and force manual usage over [version] parameter.
+        # otherwise abort and force manual usage over [name] parameter.
         if [[ ! "$BRANCH" =~ $BRANCHPREFIX ]]; then
             echo -e "\nERR: Couldn't find the right hotfix branch.\n"
-            echo -e "Please give either a version name like this:"
-            echo -e "=> git hotfix finish 1.5.0"
+            echo -e "Please give either a name like this:"
+            echo -e "=> git hotfix finish menu-fixes@v1.10.0"
             echo -e "or checkout the branch you want to finish.\n"
             usage
             exit 1
         fi
     fi
 
-    if [ ! "$BRANCH" == "$CURRENTBRANCH" ]; then
-        # change to the hotfix/v***
-        git checkout "$BRANCH"
-    fi
-
-    echo -e "\nRelease: $BRANCH"
-    echo -e "Version tag: $VERSIONTAG\n"
-
-    # merge release into develop
-    git checkout "$BRANCHFROM"
-    git merge "$BRANCH"
-
-    # squash merge develop into master
-    git checkout "$BRANCHRELEASE"
-    git merge --squash "$BRANCHFROM"
-
-    # write a changelog if wanted
     echo ""
-    read -p "Autocreate CHANGELOG.md entry (Y/n)? " autocreateChangelog
-
-    if [ "$autocreateChangelog" == "Y" ]; then
-        writeChangelog
-    fi
-
-    echo -e "\n"
-
-    read -p "Do you want to edit CHANGELOG.md (Y/n)? " openChangelog
-
-    if [ "$openChangelog" == "Y" ]; then
-        nano CHANGELOG.md
-    fi
-
-    # Create final commit with updated changelog on master
-    git add CHANGELOG.md
-    git commit -m "Release $VERSIONTAG"
-
-    # Remove release branch as its fully merged into develop
-    git branch -D "$BRANCH"
-
-    # Create version tag on develop
-    git tag -a "$VERSIONTAG" "$BRANCHFROM" -m "Create release $VERSIONTAG"
-
-    # only push new release if remote exists
-    if git ls-remote; then
-        git push --tags origin "$BRANCHFROM"
-    fi
+    git checkout "$BRANCHFROM"
+    git merge "$BRANCH" -m "Implement hotfix '$HOTFIXNAME'"
+    git branch -d "$BRANCH"
 
     if [ $? -eq 0 ]; then
-        echo -e "\nRelease $VERSIONTAG successfully created!\n"
+        echo -e "\nhotfix $HOTFIXNAME successfully implemented!\n"
     else
-        echo -e "\nERR: Problems occured during creation of release $VERSIONTAG\n"
+        echo -e "\nERR: Problems occured during implementation of hotfix $HOTFIXNAME\n"
     fi
 }
 
-# Automatically prepends an entry in the CHANGELOG.md file based on
-# the commit messages between the last release tag.
-# Will prompt the user if they want to autocreate the entry and if they
-# want to manually edit it afterwards.
-function writeChangelog {
-
-    # get last annotated tag (= version tags)
-    LASTVERSION=$(git describe --abbrev=0 "$BRANCHFROM");
-
-    # save log output to tmp release note
-    git log --merges --pretty=format:"- %s" "$LASTVERSION"..."$BRANCHFROM" > _tmp-release-note.txt;
-
-    # start version headline in tmp release message
-    echo "## ${VERSIONTAG}" > _tmp-release-message.md;
-    cat _tmp-release-note.txt >> _tmp-release-message.md;
-    echo -e "\n" >> _tmp-release-message.md;
-
-    # add old changelog data
-    cat CHANGELOG.md >> _tmp-release-message.md;
-
-    # overwrite changelog
-    mv _tmp-release-message.md CHANGELOG.md;
-
-    # tell user our success
-    echo -e "\nSuccessfully added changelog entry for $VERSIONTAG."
-    echo "Content:"
-    cat _tmp-release-note.txt
-
-    # remove tmp note
-    rm _tmp-release-note.txt
-}
-
-# abort if the [version] is missing and show the help
+# abort if the [name] is missing and show the help
 if [ -z "$2" ] && [ ! "$CMD" == "finish" ] ; then
     echo -e "\nERR: Parameter missing or command not found!\n"
     usage
