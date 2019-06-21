@@ -91,11 +91,11 @@ function createRelease {
     git add CHANGELOG.md
     git commit -m "Add release notes for $VERSIONTAG"
 
-    # merge release/vxxx into master
+    # merge release/vxxx into develop
     git checkout "$BRANCHFROM"
     git merge "$BRANCH"
 
-    # Remove release branch as its fully merged into master
+    # Remove release branch as its fully merged into develop
     git branch -d "$BRANCH"
 
     # update master with release changes from develop
