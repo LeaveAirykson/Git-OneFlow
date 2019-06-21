@@ -1,7 +1,7 @@
 #!/bin/bash
 # shellcheck disable=SC2063,SC2129,SC2181,SC2162
 # Usage:
-# git release create|c [version] [commit]
+# git release create|c version
 
 # Set default subcommand
 CMD=${1:-create}
@@ -27,7 +27,6 @@ BRANCH="${BRANCHPREFIX}${VERSIONTAG}"
 
 # tests for a clean state
 WORKINGDIRDIRTY=$(git status --porcelain)
-BRANCHEXISTS=$(git rev-parse --quiet --verify "$BRANCH")
 CURRENTBRANCH=$(git branch | grep \* | cut -d ' ' -f2)
 
 # third parameter in release start [version] [commit]
