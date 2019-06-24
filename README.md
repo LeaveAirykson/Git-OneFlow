@@ -77,7 +77,7 @@ git hotfix f sidebar-logo@v1.10.1
 
 ## Default configuration
 
-Per default WebFlow will add the following settings to your gitconfig:
+Per default WebFlow will add the following settings to your `~/.gitconfig`:
 
 ```bash
 [webflow "branch"]
