@@ -9,7 +9,7 @@ WebFlow is thought as a solution for people creating small to medium web applica
 ## Install/Uninstall
 To install the extension please clone the repository and start the install script. There is a seperate uninstall.sh file for uninstalling/removing everything.
 
-```
+```bash
 # clone repo
 git clone git@github.com:LeaveAirykson/Git-WebFlow.git
 
@@ -28,7 +28,7 @@ Features are the smallest component in WebFlow. They represent small to medium w
 
 **git feature** `s|f (name)`
 
-```
+```bash
 # start a feature named sidebar
 git feature s sidebar
 
@@ -44,34 +44,51 @@ There is only one command for creating releases:
 
 **git release** `c (version)`
 
-```
+```bash
 # create a release named 1.10.0
 git release c 1.10.0
 ```
 
 The command starts the following workflow:
 
-1. Branch off from develop as `release/xxx` branch
+1. Branch off from develop as `release/1.10.0` branch
 2. Update `CHANGELOG.md` (user input required)
 3. Merge back into `develop`
-4. Merge develop into `master`
-5. Tag commit as the release with release prefix (`v0.0.0`)
-5. Delete `release/xxx` branch
+4. Merge `develop` into `master`
+5. Tag commit as the release with release prefix (`v1.10.0`)
+5. Delete `release/1.10.0` branch
 
 ### Hotfixes
 
 Hotfixes work in the same logic as features but with a different prefix and without squash merging to keep the commit history replicable.
 
-**Recommendation:** Hotfixes should be postfixed with the version the bug was detected (f.e: `logo-fix@v1.1.0`).
+**Recommendation:**   
+Hotfixes should be postfixed with the version the bug was detected (f.e: `logo-fix@v1.1.0`).
 
 **git hotfix** `s|f (name)`
 
-```
+```bash
 # start a hotfix named sidebar-logo@v1.10.1
-git feature s sidebar-logo@v1.10.1
+git hotfix s sidebar-logo@v1.10.1
 
 # finish a feature named sidebar-logo@v1.10.1
-git feature f sidebar-logo@v1.10.1
+git hotfix f sidebar-logo@v1.10.1
+```
+
+## Default configuration
+
+Per default WebFlow will add the following settings to your gitconfig:
+
+```bash
+[webflow "branch"]
+    main = master
+    next = develop
+
+[webflow "prefix"]
+    feature = feature/
+    hotfix = hotfix/
+    release = release/
+    version = v
 ```
 
 ## Why WebFlow?
