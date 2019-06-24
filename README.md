@@ -2,6 +2,16 @@
 
 A simple and uncomplicated git workflow for implementing features, creating hotfixes and releases (tagged commits). This project is an attempted GitFlow alternative.
 
+* [Who needs this?](#who-needs-this)
+* [Install/Uninstall](#installuninstall)
+* [Commands](#commands)
+* [Features](#features)
+* [Releases](#releases)
+* [Hotfixes](#hotfixes)
+* [Default configuration](#default-configuration)
+* [Why WebFlow?](#why-webflow)
+* [References](#references)
+
 ## Who needs this?
 
 WebFlow is thought as a solution for people creating small to medium web applications and pages with a very small team. The scripts and logic are loosely based on OneFlow - the branching model described in [this blog article over at End of Line](https://www.endoflineblog.com/oneflow-a-git-branching-model-and-workflow).
