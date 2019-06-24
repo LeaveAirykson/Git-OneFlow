@@ -62,7 +62,7 @@ The command starts the following workflow:
 
 Hotfixes work in the same logic as features but with a different prefix and without squash merging to keep the commit history replicable.
 
-**Recommendation:**   
+**Recommendation:**
 Hotfixes should be postfixed with the version the bug was detected (f.e: `logo-fix@v1.1.0`).
 
 **git hotfix** `s|f (name)`
@@ -71,7 +71,7 @@ Hotfixes should be postfixed with the version the bug was detected (f.e: `logo-f
 # start a hotfix named sidebar-logo@v1.10.1
 git hotfix s sidebar-logo@v1.10.1
 
-# finish a feature named sidebar-logo@v1.10.1
+# finish a hotfix named sidebar-logo@v1.10.1
 git hotfix f sidebar-logo@v1.10.1
 ```
 
