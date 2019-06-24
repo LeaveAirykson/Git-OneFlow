@@ -12,7 +12,7 @@ SCRIPTPATH=$(dirname "${BASH_SOURCE[0]}")
 SCRIPTPATH=$(realpath "${SCRIPTPATH}")
 BINPATH=/usr/local/bin
 
-echo -e "\n${bold}Oneflow git extension uninstaller${normal}"
+echo -e "\n${bold}WebFlow git extension uninstaller${normal}"
 echo "==============================="
 
 
@@ -23,5 +23,5 @@ uninstall() {
 }
 
 if uninstall ; then
-    echo -e "${green}Uninstalled oneflow commands from ($BINPATH).${normal}"
+    echo -e "${green}Uninstalled webflow commands from ($BINPATH).${normal}"
 fi

@@ -15,10 +15,10 @@ case "$CMD" in
 esac
 
 # get the settings from git config
-BRANCHPREFIX=$(git config --get oneflow.prefix.release)
-BRANCHFROM=$(git config --get oneflow.branch.next)
-BRANCHRELEASE=$(git config --get oneflow.branch.main)
-VERSIONPREFIX=$(git config --get oneflow.prefix.version)
+BRANCHPREFIX=$(git config --get webflow.prefix.release)
+BRANCHFROM=$(git config --get webflow.branch.next)
+BRANCHRELEASE=$(git config --get webflow.branch.main)
+VERSIONPREFIX=$(git config --get webflow.prefix.version)
 
 # build final versiontag name and branch name
 VERSIONNUMBER=$2

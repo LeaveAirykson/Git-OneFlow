@@ -20,8 +20,8 @@ case "$CMD" in
 esac
 
 # get the settings from git config
-BRANCHPREFIX=$(git config --get oneflow.prefix.hotfix)
-BRANCHFROM=$(git config --get oneflow.branch.next)
+BRANCHPREFIX=$(git config --get webflow.prefix.hotfix)
+BRANCHFROM=$(git config --get webflow.branch.next)
 HOTFIXNAME=$2
 BRANCH="${BRANCHPREFIX}$HOTFIXNAME"
 
