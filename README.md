@@ -2,11 +2,11 @@
 
 A simple and uncomplicated git workflow for implementing features, creating hotfixes and releases (tagged commits). This project is an attempted GitFlow alternative.
 
+* [Install/Uninstall](#installuninstall)
 * [The WebFlow model](#the-webflow-model)
     * [The main branches](#the-main-branches)
     * [The supporting branches](#the-supporting-branches)
     * [Versioning releases](#versioning-releases)
-* [Install/Uninstall](#installuninstall)
 * [Default configuration](#default-configuration)
 * [Commands](#commands)
     * [Features](#features)
@@ -14,6 +14,18 @@ A simple and uncomplicated git workflow for implementing features, creating hotf
     * [Hotfixes](#hotfixes)
 * [Why WebFlow?](#why-webflow)
 * [References](#references)
+
+## Install/Uninstall
+To install the extension download the latest release here: [Git-WebFlow Latest Release](https://github.com/LeaveAirykson/Git-WebFlow/archive/master.zip).
+After downloading the zip file unpack it and execute the install script inside.
+
+```bash
+# install the extension
+./install.sh
+
+# to uninstall just remove the script files
+rm /usr/local/bin/{git-feature,git-hotfix,git-release}
+```
 
 ## The WebFlow model
 
@@ -28,7 +40,7 @@ WebFlow works similar to other known git workflows like GitFlow or OneFlow. It i
 
 | `main` | `next` |
 |---|---|
-|The branch which **always reflects a production-ready state**.|The branch which **always reflects a state with the latest staging changes for the next release**.|
+|Always reflects a production-ready state.|Always reflects a state with the latest staging changes for the next release.|
 
 ### The supporting branches
 
@@ -52,26 +64,12 @@ We use semantic versioning for the releases. The version number is prefixed with
 - Increment `MINOR` version when you add functionality in a backwards-compatible manner.
 - Increment `PATCH` version when you make backwards-compatible hotfixes.
 
-
-
-## Install/Uninstall
-To install the extension download the latest release here: [Git-WebFlow Latest Release](https://github.com/LeaveAirykson/Git-WebFlow/archive/master.zip).
-After downloading the zip file unpack it and execute the install script inside.
-
-```bash
-# install the extension
-./install.sh
-
-# to uninstall just remove the script files
-rm /usr/local/bin/{git-feature,git-hotfix,git-release}
-```
-
 ## Commands
 
 ### Features
 Features are the smallest component in WebFlow. They represent small to medium work packages that can be grouped (Like modules). Feature branches are prefixed with `feature/` and are **just temporarily (and mostly locally) used**. As soon as a feature is finished, it gets **squash merged** into the staging branch to keep the history slim. After its implementation the branch gets deleted.
 
-**git feature** `c|f (name)`
+**git feature c (name)**
 
 ```bash
 # create a feature named sidebar
@@ -81,6 +79,8 @@ git feature c sidebar
 The command starts the following workflow:
 
 1. Branch off from `next` as `feature/sidebar` branch
+
+**git feature f (name)**
 
 ```bash
 # finish a feature named sidebar
@@ -99,7 +99,7 @@ Releases are being created for a very short time because there is no real work d
 
 There is only one command for creating releases:
 
-**git release** `c (version)`
+**git release c (version)**
 
 ```bash
 # create a release named 1.10.0
@@ -122,15 +122,27 @@ Hotfixes work in the same logic as features but with a different prefix and with
 **Recommendation:**
 Hotfixes should be postfixed with the version the bug was detected (f.e: `logo-fix@v1.1.0`).
 
-**git hotfix** `c|f (name)`
+**git hotfix c (name)**
 
 ```bash
 # create a hotfix named sidebar-logo@v1.10.1
 git hotfix c sidebar-logo@v1.10.1
+```
+The command starts the following workflow:
 
+1. Branch off from `next` as `hotfix/sidebar-logo@v1.10.1` branch
+
+**git hotfix f (name)**
+
+```bash
 # finish a hotfix named sidebar-logo@v1.10.1
 git hotfix f sidebar-logo@v1.10.1
 ```
+
+The command starts the following workflow:
+
+1. Merge `hotfix/sidebar-logo@v1.10.1` back into `next`.
+2. Delete branch `hotfix/sidebar-logo@v1.10.1`.
 
 ## Default configuration
 
