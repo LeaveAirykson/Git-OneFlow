@@ -35,7 +35,7 @@ fi
 
 copyFiles() {
     echo -e "Moving files into ${yellow}/usr/local/bin${normal} folder."
-    cp -v "$SCRIPTPATH"/commands/* "$BINPATH/"
+    sudo cp -v "$SCRIPTPATH"/commands/* "$BINPATH/"
     installed=1
 }
 
@@ -50,7 +50,7 @@ setGitConfig() {
 }
 
 removeFolder() {
-    echo -e "\n${green}Install finished!${green}"
+    echo -e "\n${green}Install finished!${normal}"
     read -p "You can delete this folder now. Proceed? (Y/n) " askRemoveFolder
 
     if [ "$askRemoveFolder" == 'Y' ]; then
