@@ -54,6 +54,7 @@ removeFolder() {
     read -p "You can delete this folder now. Proceed? (Y/n) " askRemoveFolder
 
     if [ "$askRemoveFolder" == 'Y' ]; then
+        cd ..
         rm -rf "$SCRIPTPATH"
         exit 1
     fi
