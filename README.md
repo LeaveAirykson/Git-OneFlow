@@ -36,11 +36,11 @@ WebFlow assumes the usage of two main branches. One for production and one for a
 ### Features
 Features are the smallest component in WebFlow. They represent small to medium work packages that can be grouped (Like modules).
 
-**git feature** `s|f (name)`
+**git feature** `c|f (name)`
 
 ```bash
-# start a feature named sidebar
-git feature s sidebar
+# create a feature named sidebar
+git feature c sidebar
 
 # finish a feature named sidebar
 git feature f sidebar
@@ -75,11 +75,11 @@ Hotfixes work in the same logic as features but with a different prefix and with
 **Recommendation:**
 Hotfixes should be postfixed with the version the bug was detected (f.e: `logo-fix@v1.1.0`).
 
-**git hotfix** `s|f (name)`
+**git hotfix** `c|f (name)`
 
 ```bash
-# start a hotfix named sidebar-logo@v1.10.1
-git hotfix s sidebar-logo@v1.10.1
+# create a hotfix named sidebar-logo@v1.10.1
+git hotfix c sidebar-logo@v1.10.1
 
 # finish a hotfix named sidebar-logo@v1.10.1
 git hotfix f sidebar-logo@v1.10.1

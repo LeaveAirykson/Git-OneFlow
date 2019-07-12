@@ -1,17 +1,17 @@
 #!/bin/bash
 # shellcheck disable=SC2063,SC2129,SC2181,SC2162
 # Usage:
-# git feature start|s [name]
+# git feature create|c [name]
 # git feature finish|f [name]
 
 # Set default subcommand
-CMD=${1:-start}
+CMD=${1:-create}
 
 # make sure the aliases trigger the right
 # subcommand
 case "$CMD" in
-    s)
-        CMD='start'
+    c)
+        CMD='create'
         ;;
 
     f)
@@ -32,7 +32,7 @@ CURRENTBRANCH=$(git branch | grep \* | cut -d ' ' -f2)
 
 # Help function showing usage of the command
 usage() {
-    echo -e "Usage:\ngit feature start|s [name]"
+    echo -e "Usage:\ngit feature create|c [name]"
     echo -e "git feature finish|f [name]\n"
 }
 
@@ -90,7 +90,7 @@ fi
 
 # the main logic handler.
 case "$CMD" in
-    start)
+    create)
         if [ "$BRANCHEXISTS" ] ; then
             echo -e "\nERR: Branch $BRANCH already exists!\n"
             exit 1
