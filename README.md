@@ -24,7 +24,7 @@ After downloading the zip file unpack it and execute the install script inside.
 ./install.sh
 
 # to uninstall just remove the script files
-rm /usr/local/bin/{git-feature,git-hotfix,git-release}
+rm ~/bin/{git-feature,git-hotfix,git-release}
 ```
 
 ## The WebFlow model
