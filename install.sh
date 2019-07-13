@@ -49,8 +49,8 @@ setGitConfig() {
 }
 
 removeFolder() {
-    echo -e "\n${green}Install finished!${normal}"
-    read -p "You can delete this folder now. Proceed? (Y/n) " askRemoveFolder
+    echo -e "\n${green}Installation finished!${normal}"
+    read -p "This folder can be deleted. Proceed with deletion? (Y/n) " askRemoveFolder
 
     if [ "$askRemoveFolder" == 'Y' ]; then
         cd ..
