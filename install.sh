@@ -10,10 +10,9 @@ green="\033[32m"
 yellow="\033[33m"
 normal="\033[0m"
 
-
 SCRIPTPATH=$(dirname "${BASH_SOURCE[0]}")
 SCRIPTPATH=$(realpath "${SCRIPTPATH}")
-BINPATH=/usr/local/bin
+BINPATH="$HOME/bin"
 installed=0
 
 echo -e "\n${yellow}${bold}Git WebFlow installer"
@@ -21,7 +20,7 @@ echo -e "======================${normal}"
 
 # give some information whats going to happen
 echo -e "This installer will place the scripts ${yellow}git-feature${normal},"
-echo -e "${yellow}git-hotfix${normal} and ${yellow}git-release${normal} in the folder ${yellow}/usr/local/bin.${normal}\n"
+echo -e "${yellow}git-hotfix${normal} and ${yellow}git-release${normal} in the folder ${yellow}$BINPATH.${normal}\n"
 
 # make sure user wants to continue
 read -p "Do you want to continue? (Y/n) " askContinue
@@ -34,8 +33,8 @@ if [ ! "$askContinue" == 'Y' ]; then
 fi
 
 copyFiles() {
-    echo -e "Moving files into ${yellow}/usr/local/bin${normal} folder."
-    sudo cp -v "$SCRIPTPATH"/commands/* "$BINPATH/"
+    echo -e "Moving files into ${yellow}$BINPATH${normal} folder."
+    cp -v "$SCRIPTPATH"/commands/* "$BINPATH/"
     installed=1
 }
 
