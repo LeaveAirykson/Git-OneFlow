@@ -22,8 +22,15 @@ esac
 # get the settings from git config
 BRANCHPREFIX=$(git config --get webflow.prefix.feature)
 BRANCHFROM=$(git config --get webflow.branch.next)
+BRANCHRELEASE=$(git config --get webflow.branch.main)
 FEATURENAME=$2
 BRANCH="${BRANCHPREFIX}$FEATURENAME"
+
+# make sure the 'next' branch exists
+# use the 'main' branch as a fallback
+if ! git rev-parse --quiet --verify $BRANCHFROM | grep -q 'string'; then
+    BRANCHFROM=$BRANCHRELEASE
+fi
 
 # tests for a clean state
 WORKINGDIRDIRTY=$(git status --porcelain)
