@@ -22,7 +22,7 @@ VERSIONPREFIX=$(git config --get webflow.prefix.version)
 
 # make sure the 'next' branch exists
 # use the 'main' branch as a fallback
-if ! git rev-parse --quiet --verify $BRANCHFROM | grep -q 'string'; then
+if ! git rev-parse --quiet --verify "$BRANCHFROM"; then
     BRANCHFROM=$BRANCHRELEASE
 fi
 
