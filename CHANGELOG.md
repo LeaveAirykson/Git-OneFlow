@@ -1,3 +1,7 @@
+## v1.2.3
+- Fix commands always using master as BRANCHFROM
+- Update README.md with bin path
+
 ## v1.2.2
 - Implement fallbacks for BRANCHFROM on all commands
 - Implement fallback if 'next' release does not exist
