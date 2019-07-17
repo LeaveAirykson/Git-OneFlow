@@ -51,7 +51,7 @@ WebFlow works similar to other known git workflows like GitFlow or OneFlow. It i
 
 |Prefixes|`feature/*`|`release/*`|`hotfix/*`|
 |---|---|---|---|
-|**Purpose**|Used for creating new features and additions|Used only as a temporary branch while creating a release. has the shortest livetime.|Works the same way like a feature but will be |
+|**Purpose**|Used for creating new features and additions|Used only as a temporary branch while creating a release. has the shortest livetime.|Works the same way like a feature but will be merged with fast-forward option.|
 |**Lifetime**|As long as needed to finish the feature.|only temporarily to create a changelog.|as long as needed to finish the hotfix.|
 |**Merge type**|squash merge|normal merge|normal merge|
 
