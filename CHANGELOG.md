@@ -1,3 +1,7 @@
+## v1.2.4
+- Implement installer to create ~/bin if nonexistent
+- Fix typo in README.md
+
 ## v1.2.3
 - Fix commands always using master as BRANCHFROM
 - Update README.md with bin path
