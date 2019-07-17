@@ -6,6 +6,7 @@
 # ==================================
 # terminal formats
 bold="\033[1m"
+red="\033[31m"
 green="\033[32m"
 yellow="\033[33m"
 normal="\033[0m"
@@ -21,6 +22,16 @@ echo -e "======================${normal}"
 # give some information whats going to happen
 echo -e "This installer will place the scripts ${yellow}git-feature${normal},"
 echo -e "${yellow}git-hotfix${normal} and ${yellow}git-release${normal} in the folder ${yellow}$BINPATH.${normal}\n"
+
+# make sure to create ~/bin if non existent
+if [ -d "$BINPATH" ]; then
+    echo -e "${red}$BINPATH doesn't exist.${normal}\n"
+    read -p "Should it be created now? (Y/n) " askCreateBin
+
+    if [ "$askCreateBin" == 'Y' ]; then
+        mkdir ~/bin
+    fi
+fi
 
 # make sure user wants to continue
 read -p "Do you want to continue? (Y/n) " askContinue
