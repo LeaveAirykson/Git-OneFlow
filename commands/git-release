@@ -92,8 +92,11 @@ function createRelease {
         nano CHANGELOG.md
     fi
 
+    # write version inside a .version file
+    echo "$VERSIONTAG" > .version
+
     # Create final commit with updated changelog
-    git add CHANGELOG.md
+    git add CHANGELOG.md .version
     git commit -m "Add release notes for $VERSIONTAG"
 
     # merge release/vxxx into develop
