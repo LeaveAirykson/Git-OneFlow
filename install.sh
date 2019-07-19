@@ -24,7 +24,7 @@ echo -e "This installer will place the scripts ${yellow}git-feature${normal},"
 echo -e "${yellow}git-hotfix${normal} and ${yellow}git-release${normal} in the folder ${yellow}$BINPATH.${normal}\n"
 
 # make sure to create ~/bin if non existent
-if [ -d "$BINPATH" ]; then
+if [ ! -d "$BINPATH" ]; then
     echo -e "${red}$BINPATH doesn't exist.${normal}\n"
     read -p "Should it be created now? (Y/n) " askCreateBin
 
