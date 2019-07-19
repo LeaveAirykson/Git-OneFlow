@@ -1,3 +1,6 @@
+## v1.3.1
+- Fix install script not finding ~/bin
+
 ## v1.3.0
 - Add .version file creation
 
