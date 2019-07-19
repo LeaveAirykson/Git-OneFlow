@@ -1,3 +1,6 @@
+## v1.3.0
+- Add .version file creation
+
 ## v1.2.4
 - Implement installer to create ~/bin if nonexistent
 - Fix typo in README.md
