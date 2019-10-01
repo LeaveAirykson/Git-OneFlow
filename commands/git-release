@@ -175,6 +175,12 @@ if [ "$WORKINGDIRDIRTY" ] ; then
     exit 1
 fi
 
+# abort if version tag already exists
+if git tag -l "$VERSIONTAG"; then
+    echo -e "\nERR: Version already exists!\n"
+    exit 1
+fi
+
 # the main logic handler.
 case "$CMD" in
 
