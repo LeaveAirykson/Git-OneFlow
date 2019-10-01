@@ -1,3 +1,7 @@
+## v1.3.2
+- Check for existing version tag before creating release
+- Check out 'next' branch after creation of release
+
 ## v1.3.1
 - Fix install script not finding ~/bin
 
