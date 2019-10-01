@@ -123,6 +123,10 @@ function createRelease {
     else
         echo -e "\nERR: Problems occured during creation of release $VERSIONTAG\n"
     fi
+
+    # finally check out 'next' branch so users don't accidentaly
+    # continue working on the 'main' branch.
+    git checkout "$BRANCHFROM"
 }
 
 # Automatically prepends an entry in the CHANGELOG.md file based on
