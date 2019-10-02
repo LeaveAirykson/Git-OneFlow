@@ -3,6 +3,12 @@
 # Usage:
 # git release create|c version
 
+# =================================
+# REQUIREMENTS
+# =================================
+# make sure to always pull first to correctly
+# check for changes
+git remote update &> /dev/null
 
 # =================================
 # DEFINE VARIABLES/DEFAULTS
@@ -192,8 +198,8 @@ if [ "$WORKINGDIRDIRTY" ] ; then
 fi
 
 # make sure the branches are up to date
-if git remote update &&
-    [ "$(git rev-parse HEAD)" != "$(git rev-parse @{u})" ]; then
+if [ "$(git rev-parse HEAD)" != "$(git rev-parse @{u})" ]; then
+
     echo -e "\nERR: HEAD and origin/HEAD are deviated!"
     echo -e "Make sure you merged/pulled new commits."
     git status
