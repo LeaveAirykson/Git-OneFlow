@@ -1,3 +1,12 @@
+## v1.3.4
+- Hide verbosity of git chekout on deviation check
+- Improve check for changes on remote branch
+- Implement remote update on every call of git-release
+- Improve checks for existing version tag and remote pull
+- Remove redundant remote fetching during check
+- Fix issue where check is not finding usage()
+- Implement check for remote HEAD deviation
+
 ## v1.3.3
 - Change most recent version output to show always
 - Improve verbosity of current release
