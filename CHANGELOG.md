@@ -1,3 +1,8 @@
+## v1.3.3
+- Change most recent version output to show always
+- Improve verbosity of current release
+- Fix check for existing version tag
+
 ## v1.3.2
 - Check for existing version tag before creating release
 - Check out 'next' branch after creation of release
