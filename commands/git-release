@@ -42,6 +42,8 @@ BRANCHFROM=${3:-$BRANCHFROM}
 # get last annotated tag (= version tags)
 LASTVERSION=$(git describe --abbrev=0 "$BRANCHRELEASE");
 
+echo "Most recent: $LASTVERSION";
+
 # Help function showing usage of the command
 usage() {
     echo -e "Usage:\ngit release create|c [version] [commit]\n"
@@ -183,11 +185,6 @@ fi
 
 # the main logic handler.
 case "$CMD" in
-
-    last)
-        echo "Most recent version: $LASTVERSION";
-        exit
-        ;;
 
     create)
         createRelease
