@@ -1,3 +1,7 @@
+## v1.4.0
+- Improve createRealase() by using release notes as tag messages
+- Implement pushing all branches after release creation
+
 ## v1.3.4
 - Hide verbosity of git chekout on deviation check
 - Improve check for changes on remote branch
