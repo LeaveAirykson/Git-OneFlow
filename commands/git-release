@@ -131,8 +131,16 @@ function createRelease {
     git checkout "$BRANCHRELEASE"
     git merge "$BRANCHFROM" -m "Release $VERSIONTAG"
 
+    # get tmp changelog if any
+    if [ -f _tmp-release-note.txt ]; then
+        RELEASENOTES="$(cat _tmp-release-note.txt)"
+
+        # remove tmp note
+        rm _tmp-release-note.txt
+    fi
+
     # Create version tag on master
-    git tag -a "$VERSIONTAG" "$BRANCHFROM" -m "Release $VERSIONTAG"
+    git tag -a "$VERSIONTAG" "$BRANCHFROM" -m "Release version $VERSIONNUMBER" -m "$RELEASENOTES"
 
 
     if git ls-remote; then
@@ -179,9 +187,6 @@ function writeChangelog {
     echo -e "\nSuccessfully added changelog entry for $VERSIONTAG."
     echo "Content:"
     cat _tmp-release-note.txt
-
-    # remove tmp note
-    rm _tmp-release-note.txt
 }
 
 # =================================
@@ -215,7 +220,7 @@ fi
 # abort if version tag already exists
 if [ "$(git tag -l "$VERSIONTAG")" ]; then
     echo -e "\nERR: Version already exists!\n"
-    git describe "$VERSIONTAG"
+    git show "$VERSIONTAG"
     exit 1
 fi
 
