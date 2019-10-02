@@ -192,7 +192,7 @@ if [ "$WORKINGDIRDIRTY" ] ; then
 fi
 
 # make sure the branches are up to date
-if git remote update && git fetch --all &&
+if git remote update &&
     [ "$(git rev-parse HEAD)" != "$(git rev-parse @{u})" ]; then
     echo -e "\nERR: HEAD and origin/HEAD are deviated!"
     echo -e "Make sure you merged/pulled new commits."
