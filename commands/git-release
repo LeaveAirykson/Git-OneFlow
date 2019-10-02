@@ -176,7 +176,7 @@ if [ "$WORKINGDIRDIRTY" ] ; then
 fi
 
 # abort if version tag already exists
-if git tag -l "$VERSIONTAG"; then
+if [ "$(git tag -l "$VERSIONTAG")" ]; then
     echo -e "\nERR: Version already exists!\n"
     exit 1
 fi
