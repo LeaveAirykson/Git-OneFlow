@@ -134,8 +134,12 @@ function createRelease {
     # Create version tag on master
     git tag -a "$VERSIONTAG" "$BRANCHFROM" -m "Release $VERSIONTAG"
 
-    # only push new release if remote exists
+
     if git ls-remote; then
+        # push all upstream branches
+        git push --all
+
+        # push new version tag
         git push origin "$VERSIONTAG"
     fi
 
@@ -143,11 +147,12 @@ function createRelease {
         echo -e "\nRelease $VERSIONTAG successfully created!\n"
     else
         echo -e "\nERR: Problems occured during creation of release $VERSIONTAG\n"
+        exit 1
     fi
 
     # finally check out 'next' branch so users don't accidentaly
     # continue working on the 'main' branch.
-    git checkout "$BRANCHFROM"
+    git checkout "$BRANCHFROM" &> /dev/null
 }
 
 # Automatically prepends an entry in the CHANGELOG.md file based on
