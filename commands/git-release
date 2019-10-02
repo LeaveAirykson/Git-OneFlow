@@ -84,7 +84,7 @@ function createRelease {
         if [[ ! "$BRANCH" =~ $BRANCHPREFIX ]]; then
             echo -e "\nERR: Couldn't find the right release branch.\n"
             echo -e "Please give either a version name like this:"
-            echo -e "=> git release finish 1.5.0"
+            echo -e "=> git release c 1.5.0"
             echo -e "or checkout the branch you want to finish.\n"
             usage
             exit 1
@@ -198,7 +198,8 @@ if [ "$WORKINGDIRDIRTY" ] ; then
 fi
 
 # make sure the branches are up to date
-if [ "$(git rev-parse HEAD)" != "$(git rev-parse @{u})" ]; then
+if git checkout "$BRANCHFROM" &&
+    [ "$(git rev-parse HEAD)" != "$(git rev-parse @{u})" ]; then
 
     echo -e "\nERR: HEAD and origin/HEAD are deviated!"
     echo -e "Make sure you merged/pulled new commits."
