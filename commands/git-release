@@ -39,6 +39,9 @@ CURRENTBRANCH=$(git branch | grep \* | cut -d ' ' -f2)
 # is used as a reference to branch off from.
 BRANCHFROM=${3:-$BRANCHFROM}
 
+# get last annotated tag (= version tags)
+LASTVERSION=$(git describe --abbrev=0 "$BRANCHRELEASE");
+
 # Help function showing usage of the command
 usage() {
     echo -e "Usage:\ngit release create|c [version] [commit]\n"
@@ -135,9 +138,6 @@ function createRelease {
 # want to manually edit it afterwards.
 function writeChangelog {
 
-    # get last annotated tag (= version tags)
-    LASTVERSION=$(git describe --abbrev=0 "$BRANCHFROM");
-
     # save log output to tmp release note
     git log --pretty=format:"- %s" "$LASTVERSION"..."$BRANCHFROM" > _tmp-release-note.txt;
 
@@ -183,6 +183,11 @@ fi
 
 # the main logic handler.
 case "$CMD" in
+
+    last)
+        echo "Most recent version: $LASTVERSION";
+        exit
+        ;;
 
     create)
         createRelease
