@@ -118,7 +118,7 @@ function createRelease {
 
     # Create final commit with updated changelog
     git add CHANGELOG.md .version
-    git commit -m "Add release notes for $VERSIONTAG"
+    git commit -m "Release version $VERSIONNUMBER"
 
     # merge release/vxxx into develop
     git checkout "$BRANCHFROM"
