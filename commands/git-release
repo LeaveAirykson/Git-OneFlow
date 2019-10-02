@@ -3,6 +3,11 @@
 # Usage:
 # git release create|c version
 
+
+# =================================
+# DEFINE VARIABLES/DEFAULTS
+# =================================
+
 # Set default subcommand
 CMD=${1:-create}
 
@@ -43,6 +48,42 @@ BRANCHFROM=${3:-$BRANCHFROM}
 LASTVERSION=$(git describe --abbrev=0 "$BRANCHRELEASE");
 
 echo "Most recent: $LASTVERSION";
+
+# =================================
+# CHECKS
+# =================================
+
+# abort if the [version] is missing and show the help
+if [ -z "$2" ] && [ ! "$CMD" == "finish" ] ; then
+    echo -e "\nERR: Parameter missing or command not found!\n"
+    usage
+    exit 1
+fi
+
+# abort if working directory is dirty
+if [ "$WORKINGDIRDIRTY" ] ; then
+    echo -e "\nERR: Your working directory is dirty!\n"
+    git status
+    exit 1
+fi
+
+# make sure the branches are up to date
+if git remote update && git fetch --all &&
+    [ "$(git rev-parse HEAD)" != "$(git rev-parse @{u})" ]; then
+    echo -e "\nERR: HEAD and origin/HEAD are deviated!"
+    echo -e "Make sure you merged/pulled new commits."
+    exit 1
+fi
+
+# abort if version tag already exists
+if [ "$(git tag -l "$VERSIONTAG")" ]; then
+    echo -e "\nERR: Version already exists!\n"
+    exit 1
+fi
+
+# =================================
+# FUNCTIONS
+# =================================
 
 # Help function showing usage of the command
 usage() {
@@ -163,27 +204,9 @@ function writeChangelog {
     rm _tmp-release-note.txt
 }
 
-# abort if the [version] is missing and show the help
-if [ -z "$2" ] && [ ! "$CMD" == "finish" ] ; then
-    echo -e "\nERR: Parameter missing or command not found!\n"
-    usage
-    exit 1
-fi
-
-# abort if working directory is dirty
-if [ "$WORKINGDIRDIRTY" ] ; then
-    echo -e "\nERR: Your working directory is dirty!\n"
-    git status
-    exit 1
-fi
-
-# abort if version tag already exists
-if [ "$(git tag -l "$VERSIONTAG")" ]; then
-    echo -e "\nERR: Version already exists!\n"
-    exit 1
-fi
-
-# the main logic handler.
+# =================================
+# EXECUTION
+# =================================
 case "$CMD" in
 
     create)
