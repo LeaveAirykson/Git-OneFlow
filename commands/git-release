@@ -212,7 +212,7 @@ function createChangelogFromLog {
 # abort if the [version] is missing and show the help
 if [ -z "$2" ]; then
     echo -e "\nERR: Parameter missing or command not found!\n"
-    echo "Execute git-release -help to show instructions."
+    usage
     exit 1
 fi
 
