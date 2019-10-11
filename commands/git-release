@@ -209,13 +209,6 @@ function createChangelogFromLog {
 # =================================
 # CHECKS
 # =================================
-# abort if the [version] is missing and show the help
-if [ -z "$2" ]; then
-    echo -e "\nERR: Parameter missing or command not found!\n"
-    usage
-    exit 1
-fi
-
 # abort if working directory is dirty
 if [ "$WORKINGDIRDIRTY" ] ; then
     echo -e "\nERR: Your working directory is dirty!\n"
@@ -229,6 +222,7 @@ if git checkout "$BRANCHFROM" &> /dev/null &&
 
     echo -e "\nERR: HEAD and origin/HEAD are deviated!"
     echo -e "Make sure you merged/pulled new commits."
+    echo ""
     git status
     exit 1
 fi
@@ -257,6 +251,13 @@ else
     echo "Using full history as reference."
 fi
 
+# abort if the [version] is missing and show the help
+if [ -z "$2" ]; then
+    echo -e "\nERR: Parameter missing or command not found!\n"
+    usage
+    exit 1
+fi
+
 # =================================
 # EXECUTION
 # =================================
@@ -264,11 +265,6 @@ case "$CMD" in
 
     create)
         createRelease
-        exit
-        ;;
-
-    '-help')
-        usage
         exit
         ;;
 
