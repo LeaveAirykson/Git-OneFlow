@@ -1,3 +1,8 @@
+## v1.4.1
+- Fix output help usage
+- Refactor git-release to executes all checks before doing the rest
+
+
 ## v1.4.0
 - Improve createRealase() by using release notes as tag messages
 - Implement pushing all branches after release creation
