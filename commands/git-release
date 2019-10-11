@@ -50,57 +50,6 @@ CURRENTBRANCH=$(git branch | grep \* | cut -d ' ' -f2)
 # is used as a reference to branch off from.
 BRANCHFROM=${3:-$BRANCHFROM}
 
-# =================================
-# CHECKS
-# =================================
-
-# abort if the [version] is missing and show the help
-if [ -z "$2" ]; then
-    echo -e "\nERR: Parameter missing or command not found!\n"
-    usage
-    exit 1
-fi
-
-# abort if working directory is dirty
-if [ "$WORKINGDIRDIRTY" ] ; then
-    echo -e "\nERR: Your working directory is dirty!\n"
-    git status
-    exit 1
-fi
-
-# make sure the branches are up to date
-if git checkout "$BRANCHFROM" &> /dev/null &&
-    [ "$(git rev-parse HEAD)" != "$(git rev-parse @{u})" ]; then
-
-    echo -e "\nERR: HEAD and origin/HEAD are deviated!"
-    echo -e "Make sure you merged/pulled new commits."
-    git status
-    exit 1
-fi
-
-# abort if version tag already exists
-if [ "$(git tag -l "$VERSIONTAG")" ]; then
-    echo -e "\nERR: Version already exists!\n"
-    git show "$VERSIONTAG"
-    exit 1
-fi
-
-# this will set the LASTVERSION to the last
-# annotated tag
-if git describe --abbrev=0 "$BRANCHRELEASE" &> /dev/null; then
-
-    # get last annotated tag (= version tags)
-    LASTVERSION=$(git describe --abbrev=0 "$BRANCHRELEASE");
-    # Show most recent version
-    echo "Most recent: $LASTVERSION";
-
-# use first commit as fallback if no version exists
-else
-    # tell user there is no recent version
-    LASTVERSION='false'
-    echo "No recent version found."
-    echo "Using full history as reference."
-fi
 
 # =================================
 # FUNCTIONS
@@ -258,6 +207,57 @@ function createChangelogFromLog {
 
 
 # =================================
+# CHECKS
+# =================================
+# abort if the [version] is missing and show the help
+if [ -z "$2" ]; then
+    echo -e "\nERR: Parameter missing or command not found!\n"
+    echo "Execute git-release -help to show instructions."
+    exit 1
+fi
+
+# abort if working directory is dirty
+if [ "$WORKINGDIRDIRTY" ] ; then
+    echo -e "\nERR: Your working directory is dirty!\n"
+    git status
+    exit 1
+fi
+
+# make sure the branches are up to date
+if git checkout "$BRANCHFROM" &> /dev/null &&
+    [ "$(git rev-parse HEAD)" != "$(git rev-parse @{u})" ]; then
+
+    echo -e "\nERR: HEAD and origin/HEAD are deviated!"
+    echo -e "Make sure you merged/pulled new commits."
+    git status
+    exit 1
+fi
+
+# abort if version tag already exists
+if [ "$(git tag -l "$VERSIONTAG")" ]; then
+    echo -e "\nERR: Version already exists!\n"
+    git show "$VERSIONTAG"
+    exit 1
+fi
+
+# this will set the LASTVERSION to the last
+# annotated tag
+if git describe --abbrev=0 "$BRANCHRELEASE" &> /dev/null; then
+
+    # get last annotated tag (= version tags)
+    LASTVERSION=$(git describe --abbrev=0 "$BRANCHRELEASE");
+    # Show most recent version
+    echo "Most recent: $LASTVERSION";
+
+# use first commit as fallback if no version exists
+else
+    # tell user there is no recent version
+    LASTVERSION='false'
+    echo "No recent version found."
+    echo "Using full history as reference."
+fi
+
+# =================================
 # EXECUTION
 # =================================
 case "$CMD" in
@@ -267,7 +267,7 @@ case "$CMD" in
         exit
         ;;
 
-    *)
+    '-help')
         usage
         exit
         ;;
