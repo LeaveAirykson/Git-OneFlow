@@ -33,7 +33,7 @@ VERSIONPREFIX=$(git config --get webflow.prefix.version)
 
 # make sure the 'next' branch exists
 # use the 'main' branch as a fallback
-if ! git rev-parse --quiet --verify "$BRANCHFROM"; then
+if ! git rev-parse --quiet --verify "$BRANCHFROM" &> /dev/null; then
     BRANCHFROM=$BRANCHRELEASE
 fi
 
@@ -50,11 +50,57 @@ CURRENTBRANCH=$(git branch | grep \* | cut -d ' ' -f2)
 # is used as a reference to branch off from.
 BRANCHFROM=${3:-$BRANCHFROM}
 
-# get last annotated tag (= version tags)
-LASTVERSION=$(git describe --abbrev=0 "$BRANCHRELEASE");
+# =================================
+# CHECKS
+# =================================
 
-echo "Most recent: $LASTVERSION";
+# abort if the [version] is missing and show the help
+if [ -z "$2" ]; then
+    echo -e "\nERR: Parameter missing or command not found!\n"
+    usage
+    exit 1
+fi
 
+# abort if working directory is dirty
+if [ "$WORKINGDIRDIRTY" ] ; then
+    echo -e "\nERR: Your working directory is dirty!\n"
+    git status
+    exit 1
+fi
+
+# make sure the branches are up to date
+if git checkout "$BRANCHFROM" &> /dev/null &&
+    [ "$(git rev-parse HEAD)" != "$(git rev-parse @{u})" ]; then
+
+    echo -e "\nERR: HEAD and origin/HEAD are deviated!"
+    echo -e "Make sure you merged/pulled new commits."
+    git status
+    exit 1
+fi
+
+# abort if version tag already exists
+if [ "$(git tag -l "$VERSIONTAG")" ]; then
+    echo -e "\nERR: Version already exists!\n"
+    git show "$VERSIONTAG"
+    exit 1
+fi
+
+# this will set the LASTVERSION to the last
+# annotated tag
+if git describe --abbrev=0 "$BRANCHRELEASE" &> /dev/null; then
+
+    # get last annotated tag (= version tags)
+    LASTVERSION=$(git describe --abbrev=0 "$BRANCHRELEASE");
+    # Show most recent version
+    echo "Most recent: $LASTVERSION";
+
+# use first commit as fallback if no version exists
+else
+    # tell user there is no recent version
+    LASTVERSION='false'
+    echo "No recent version found."
+    echo "Using full history as reference."
+fi
 
 # =================================
 # FUNCTIONS
@@ -99,26 +145,44 @@ function createRelease {
 
     # write a changelog if needed
     echo ""
-    read -p "Autocreate CHANGELOG.md entry (Y/n)? " autocreateChangelog
+    read -p "Create CHANGELOG entry (Y/n)? " autocreateChangelog
 
     if [ "$autocreateChangelog" == "Y" ]; then
+        # autocreate changelog from git log
+        createChangelogFromLog
+
+        # ask user if he wants to edit the changelog entry
+        echo -e "\n"
+        read -p "Do you want to edit the entry (Y/n)? " openChangelog
+
+        if [ "$openChangelog" == "Y" ]; then
+            nano _tmp-release-note.txt
+        fi
+
+        # finalize changelog
         writeChangelog
+
+        # add it to the release commit
+        git add CHANGELOG.md
     fi
 
-    echo -e "\n"
+    # get tmp changelog if any
+    if [ -f _tmp-release-note.txt ]; then
+        RELEASENOTES="$(cat _tmp-release-note.txt)"
 
-    read -p "Do you want to edit CHANGELOG.md (Y/n)? " openChangelog
-
-    if [ "$openChangelog" == "Y" ]; then
-        nano CHANGELOG.md
+        # remove tmp note
+        rm _tmp-release-note.txt
+    else
+        # use an empty release note as fallback
+        RELEASENOTES=''
     fi
 
     # write version inside a .version file
-    echo "$VERSIONTAG" > .version
+    # and add it to the next commit
+    echo "$VERSIONTAG" > .version && git add .version
 
     # Create final commit with updated changelog
-    git add CHANGELOG.md .version
-    git commit -m "Release version $VERSIONNUMBER"
+    git commit -m "Release version $VERSIONNUMBER" -m "$RELEASENOTES"
 
     # merge release/vxxx into develop
     git checkout "$BRANCHFROM"
@@ -131,13 +195,6 @@ function createRelease {
     git checkout "$BRANCHRELEASE"
     git merge "$BRANCHFROM" -m "Release $VERSIONTAG"
 
-    # get tmp changelog if any
-    if [ -f _tmp-release-note.txt ]; then
-        RELEASENOTES="$(cat _tmp-release-note.txt)"
-
-        # remove tmp note
-        rm _tmp-release-note.txt
-    fi
 
     # Create version tag on master
     git tag -a "$VERSIONTAG" "$BRANCHFROM" -m "Release version $VERSIONNUMBER" -m "$RELEASENOTES"
@@ -169,9 +226,6 @@ function createRelease {
 # want to manually edit it afterwards.
 function writeChangelog {
 
-    # save log output to tmp release note
-    git log --pretty=format:"- %s" "$LASTVERSION"..."$BRANCHFROM" > _tmp-release-note.txt;
-
     # start version headline in tmp release message
     echo "## ${VERSIONTAG}" > _tmp-release-message.md;
     cat _tmp-release-note.txt >> _tmp-release-message.md;
@@ -185,44 +239,22 @@ function writeChangelog {
 
     # tell user our success
     echo -e "\nSuccessfully added changelog entry for $VERSIONTAG."
-    echo "Content:"
-    cat _tmp-release-note.txt
 }
 
-# =================================
-# CHECKS
-# =================================
+function createChangelogFromLog {
+    # use full git log as reference if no version exist
+    if [ "$LASTVERSION" = 'false' ]; then
+        git log --pretty=format:"- %s" "$BRANCHFROM" > _tmp-release-note.txt;
 
-# abort if the [version] is missing and show the help
-if [ -z "$2" ] && [ ! "$CMD" == "finish" ] ; then
-    echo -e "\nERR: Parameter missing or command not found!\n"
-    usage
-    exit 1
-fi
+    # use latest annotated tag as reference if it exists
+    else
+        # save log output to tmp release note
+        git log --pretty=format:"- %s" "$LASTVERSION"..."$BRANCHFROM" > _tmp-release-note.txt;
+    fi
 
-# abort if working directory is dirty
-if [ "$WORKINGDIRDIRTY" ] ; then
-    echo -e "\nERR: Your working directory is dirty!\n"
-    git status
-    exit 1
-fi
-
-# make sure the branches are up to date
-if git checkout "$BRANCHFROM" &> /dev/null &&
-    [ "$(git rev-parse HEAD)" != "$(git rev-parse @{u})" ]; then
-
-    echo -e "\nERR: HEAD and origin/HEAD are deviated!"
-    echo -e "Make sure you merged/pulled new commits."
-    git status
-    exit 1
-fi
-
-# abort if version tag already exists
-if [ "$(git tag -l "$VERSIONTAG")" ]; then
-    echo -e "\nERR: Version already exists!\n"
-    git show "$VERSIONTAG"
-    exit 1
-fi
+    echo "Content:"
+    cat _tmp-release-note.txt;
+}
 
 
 # =================================
