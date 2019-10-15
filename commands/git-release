@@ -144,17 +144,12 @@ function createRelease {
     git checkout "$BRANCHRELEASE"
     git merge "$BRANCHFROM" -m "Release $VERSIONTAG"
 
-
     # Create version tag on master
     git tag -a "$VERSIONTAG" "$BRANCHFROM" -m "Release version $VERSIONNUMBER" -m "$RELEASENOTES"
 
-
-    if git ls-remote; then
-        # push all upstream branches
-        git push --all
-
-        # push new version tag
-        git push origin "$VERSIONTAG"
+    if git remote &> /dev/null; then
+        # push the branches
+        git push --follow-tags
     fi
 
     if [ $? -eq 0 ]; then
