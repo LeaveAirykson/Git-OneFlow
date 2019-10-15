@@ -1,3 +1,7 @@
+## v1.5.0
+- Hide output of checking if there is a remote
+- Move check for second parameter to the end
+
 ## v1.4.1
 - Fix output help usage
 - Refactor git-release to executes all checks before doing the rest
