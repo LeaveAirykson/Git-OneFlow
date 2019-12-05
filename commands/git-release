@@ -23,6 +23,9 @@ case "$CMD" in
     c)
         CMD='create'
         ;;
+    p)
+        CMD='publish'
+        ;;
 esac
 
 # get the settings from git config
@@ -39,14 +42,14 @@ fi
 
 # build final versiontag name and branch name
 VERSIONNUMBER=$2
-VERSIONTAG=${VERSIONPREFIX}$VERSIONNUMBER
+VERSIONTAG=${VERSIONPREFIX}${VERSIONNUMBER}
 BRANCH="${BRANCHPREFIX}${VERSIONTAG}"
 
 # tests for a clean state
 WORKINGDIRDIRTY=$(git status --porcelain)
 CURRENTBRANCH=$(git branch | grep \* | cut -d ' ' -f2)
 
-# third parameter in release start [version] [commit]
+# third parameter in release [create|publish] [version] [commit]
 # is used as a reference to branch off from.
 BRANCHFROM=${3:-$BRANCHFROM}
 
@@ -58,11 +61,29 @@ BRANCHFROM=${3:-$BRANCHFROM}
 # Help function showing usage of the command
 usage() {
     echo -e "Usage:\ngit release create|c [version] [commit]\n"
+    echo -e "Usage:\ngit release publish|p [version]\n"
+}
+
+# creates a release branch and optionally pushes it to the remote
+function createRelease {
+    # assume current branch is a release/ branch
+    #  if no version number is given
+    if [ -z "$VERSIONNUMBER" ]; then
+
+        echo -e "\nERR: No release name given!\n"
+        exit 1
+
+    fi
+
+    # checkout release/vxxx branch
+    git checkout -b "$BRANCH" "$BRANCHFROM"
+
+    echo "Make sure to push the release if its not finished yet so others can add commits to it."
 }
 
 # merges release branch into develop and creates
 # fast forward merge into master to create release tag.
-function createRelease {
+function publishRelease {
 
     # assume current branch is a release/ branch
     #  if no version number is given
@@ -79,15 +100,30 @@ function createRelease {
         if [[ ! "$BRANCH" =~ $BRANCHPREFIX ]]; then
             echo -e "\nERR: Couldn't find the right release branch.\n"
             echo -e "Please give either a version name like this:"
-            echo -e "=> git release c 1.5.0"
+            echo -e "=> git release publish v1.5.0"
             echo -e "or checkout the branch you want to finish.\n"
             usage
             exit 1
         fi
     fi
 
-    # temporarily create a release/vxxx branch
-    git checkout -b "$BRANCH" "$BRANCHFROM"
+    # checkout release/vxxx branch
+    git checkout "$BRANCH"
+
+    # this will set the LASTVERSION to the last
+    # annotated tag
+    if git describe --abbrev=0 "$BRANCHRELEASE" &> /dev/null; then
+
+        # get last annotated tag (= version tags)
+        LASTVERSION=$(git describe --abbrev=0 "$BRANCHRELEASE");
+
+    # use first commit as fallback if no version exists
+    else
+        # tell user there is no recent version
+        LASTVERSION='false'
+        echo "No recent version found."
+        echo "Using full history as reference."
+    fi
 
     echo -e "\nRelease: $BRANCH"
     echo -e "Version tag: $VERSIONTAG\n"
@@ -137,9 +173,6 @@ function createRelease {
     git checkout "$BRANCHFROM"
     git merge "$BRANCH"
 
-    # Remove release branch as its fully merged into develop
-    git branch -d "$BRANCH"
-
     # update master with release changes from develop
     git checkout "$BRANCHRELEASE"
     git merge "$BRANCHFROM" -m "Release $VERSIONTAG"
@@ -158,6 +191,9 @@ function createRelease {
         echo -e "\nERR: Problems occured during creation of release $VERSIONTAG\n"
         exit 1
     fi
+
+    # Remove release branch as its fully merged into develop
+    git branch -d "$BRANCH"
 
     # finally check out 'next' branch so users don't accidentaly
     # continue working on the 'main' branch.
@@ -229,30 +265,6 @@ if [ "$(git tag -l "$VERSIONTAG")" ]; then
     exit 1
 fi
 
-# this will set the LASTVERSION to the last
-# annotated tag
-if git describe --abbrev=0 "$BRANCHRELEASE" &> /dev/null; then
-
-    # get last annotated tag (= version tags)
-    LASTVERSION=$(git describe --abbrev=0 "$BRANCHRELEASE");
-    # Show most recent version
-    echo "Most recent: $LASTVERSION";
-
-# use first commit as fallback if no version exists
-else
-    # tell user there is no recent version
-    LASTVERSION='false'
-    echo "No recent version found."
-    echo "Using full history as reference."
-fi
-
-# abort if the [version] is missing and show the help
-if [ -z "$2" ]; then
-    echo -e "\nERR: Parameter missing or command not found!\n"
-    usage
-    exit 1
-fi
-
 # =================================
 # EXECUTION
 # =================================
@@ -260,6 +272,11 @@ case "$CMD" in
 
     create)
         createRelease
+        exit
+        ;;
+
+    publish)
+        publishRelease
         exit
         ;;
 

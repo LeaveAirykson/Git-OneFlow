@@ -8,35 +8,37 @@
 bold="\033[1m"
 red="\033[31m"
 green="\033[32m"
+cyan="\033[36m"
 yellow="\033[33m"
 normal="\033[0m"
 
 SCRIPTPATH=$(dirname "${BASH_SOURCE[0]}")
 SCRIPTPATH=$(realpath "${SCRIPTPATH}")
-BINPATH="$HOME/bin"
 installed=0
 
-echo -e "\n${yellow}${bold}Git WebFlow installer"
-echo -e "======================${normal}"
+echo -e "\n${cyan}Set the install folder.${normal}"
+echo -e "And make sure its added to your \$PATH."
+
+read -e -p "(/usr/local/bin) " setInstallPath
+
+# define the install folder
+INSTPATH=${setInstallPath:-"/usr/local/bin"}
 
 # give some information whats going to happen
-echo -e "This installer will place the scripts ${yellow}git-feature${normal},"
-echo -e "${yellow}git-hotfix${normal} and ${yellow}git-release${normal} in the folder ${yellow}$BINPATH.${normal}\n"
+echo -e "\n${cyan}The following scripts will be placed in ${INSTPATH}${normal}:"
+
+# list commands
+ls "$SCRIPTPATH"/commands|tr " " "\n"
 
 # make sure to create ~/bin if non existent
-if [ ! -d "$BINPATH" ]; then
-    echo -e "${red}$BINPATH doesn't exist.${normal}\n"
-    read -p "Should it be created now? (Y/n) " askCreateBin
-
-    if [ "$askCreateBin" == 'Y' ]; then
-        mkdir ~/bin
-    fi
+if [ ! -d "$INSTPATH" ]; then
+    echo -e "\n${red}$INSTPATH doesn't exist. It will be created for you.${normal}"
 fi
+
+echo ""
 
 # make sure user wants to continue
 read -p "Do you want to continue? (Y/n) " askContinue
-
-echo ""
 
 # abort if wished
 if [ ! "$askContinue" == 'Y' ]; then
@@ -44,9 +46,9 @@ if [ ! "$askContinue" == 'Y' ]; then
 fi
 
 copyFiles() {
-    echo -e "Moving files into ${yellow}$BINPATH${normal} folder."
-    cp -v "$SCRIPTPATH"/commands/* "$BINPATH/"
+    cp "$SCRIPTPATH"/commands/* "$INSTPATH/"
     installed=1
+    echo ""
 }
 
 setGitConfig() {
@@ -60,22 +62,22 @@ setGitConfig() {
 }
 
 removeFolder() {
-    echo -e "\n${green}Installation finished!${normal}"
+    echo -e "⮕ ${green}Installation finished!${normal}\n"
     read -p "This folder can be deleted. Proceed with deletion? (Y/n) " askRemoveFolder
 
     if [ "$askRemoveFolder" == 'Y' ]; then
-        cd ..
         rm -rf "$SCRIPTPATH"
+        cd ~
         exit 1
     fi
 }
 
 if copyFiles ; then
-    echo -e "\n=> ${green}Installed webflow commands ($BINPATH).${normal}"
+    echo -e "⮕ ${green}Installed webflow commands ($INSTPATH).${normal}"
 fi
 
 if setGitConfig ; then
-    echo -e "=> ${green}Added webflow configs (~/.gitconfig).${normal}\n"
+    echo -e "⮕ ${green}Added webflow configs (~/.gitconfig).${normal}"
 fi
 
 if [ $installed == "2" ]; then
