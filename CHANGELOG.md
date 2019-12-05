@@ -1,3 +1,6 @@
+## v2.0.0
+- Implement git release publish and renamed git release create
+
 ## v1.5.0
 - Hide output of checking if there is a remote
 - Move check for second parameter to the end
