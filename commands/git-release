@@ -2,6 +2,15 @@
 # shellcheck disable=SC2063,SC2129,SC2181,SC2162
 # Usage:
 # git release create|c version
+# # git release publish|p version
+
+bold="\033[1m"
+red="\033[31m"
+green="\033[32m"
+cyan="\033[36m"
+yellow="\033[33m"
+normal="\033[0m"
+
 
 # =================================
 # REQUIREMENTS
@@ -98,7 +107,7 @@ function publishRelease {
         # Make sure the branch starts with the release/ prefix
         # otherwise abort and force manual usage over [version] parameter.
         if [[ ! "$BRANCH" =~ $BRANCHPREFIX ]]; then
-            echo -e "\nERR: Couldn't find the right release branch.\n"
+            echo -e "\n⮕ ${red}ERR: Couldn't find the right release branch.${normal}\n"
             echo -e "Please give either a version name like this:"
             echo -e "=> git release publish v1.5.0"
             echo -e "or checkout the branch you want to finish.\n"
@@ -121,7 +130,7 @@ function publishRelease {
     else
         # tell user there is no recent version
         LASTVERSION='false'
-        echo "No recent version found."
+        echo "${yellow}No recent version found.${normal}"
         echo "Using full history as reference."
     fi
 
@@ -186,9 +195,9 @@ function publishRelease {
     fi
 
     if [ $? -eq 0 ]; then
-        echo -e "\nRelease $VERSIONTAG successfully created!\n"
+        echo -e "\n⮕ ${green}Release $VERSIONTAG successfully created!${normal}\n"
     else
-        echo -e "\nERR: Problems occured during creation of release $VERSIONTAG\n"
+        echo -e "\n⮕ ${red}ERR: Problems occured during creation of release:${normal} $VERSIONTAG\n"
         exit 1
     fi
 
@@ -218,7 +227,7 @@ function writeChangelog {
     mv _tmp-release-message.md CHANGELOG.md;
 
     # tell user our success
-    echo -e "\nSuccessfully added changelog entry for $VERSIONTAG."
+    echo -e "\n⮕ ${green}Successfully added changelog entry for:${normal} $VERSIONTAG."
 }
 
 function createChangelogFromLog {
@@ -251,7 +260,7 @@ fi
 if git checkout "$BRANCHFROM" &> /dev/null &&
     [ "$(git rev-parse HEAD)" != "$(git rev-parse @{u})" ]; then
 
-    echo -e "\nERR: HEAD and origin/HEAD are deviated!"
+    echo -e "\n⮕ ${red}ERR: HEAD and origin/HEAD are deviated!${normal}"
     echo -e "Make sure you merged/pulled new commits."
     echo ""
     git status
@@ -260,7 +269,7 @@ fi
 
 # abort if version tag already exists
 if [ "$(git tag -l "$VERSIONTAG")" ]; then
-    echo -e "\nERR: Version already exists!\n"
+    echo -e "\n⮕ ${red}ERR: Version already exists!${normal}\n"
     git show "$VERSIONTAG"
     exit 1
 fi
