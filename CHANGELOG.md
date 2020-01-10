@@ -1,3 +1,7 @@
+## v3.0.0
+- Rename project to nextflow and introduce new install routine
+- Improve success messages in console
+
 ## v2.0.0
 - Implement git release publish and renamed git release create
 
