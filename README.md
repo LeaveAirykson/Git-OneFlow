@@ -25,6 +25,22 @@ rm /usr/local/bin/{git-feature,git-hotfix,git-release}
 
 [See the Wiki](https://github.com/LeaveAirykson/git-nextflow/wiki) for a more detailed introduction into the Nextflow Model.
 
+## Default configuration
+
+Per default Nextflow will add the following settings to your `~/.gitconfig`:
+
+```bash
+[Nextflow "branch"]
+    main = master       # the stable release branch
+    next = develop      # the pre-release branch
+
+[Nextflow "prefix"]
+    feature = feature/  # prefix for feature branches
+    hotfix = hotfix/    # prefix for hotfix branches
+    release = release/  # prefix for release branches
+    version = v         # prefix for version tag (v1.0.0)
+```
+
 ## Commands
 
 ### Features
@@ -114,22 +130,8 @@ The command starts the following workflow:
 1. Merge `hotfix/sidebar-logo@v1.10.1` back into `next`.
 2. Delete branch `hotfix/sidebar-logo@v1.10.1`.
 
-## Default configuration
-
-Per default Nextflow will add the following settings to your `~/.gitconfig`:
-
-```bash
-[Nextflow "branch"]
-    main = master       # the stable release branch
-    next = develop      # the pre-release branch
-
-[Nextflow "prefix"]
-    feature = feature/  # prefix for feature branches
-    hotfix = hotfix/    # prefix for hotfix branches
-    release = release/  # prefix for release branches
-    version = v         # prefix for version tag (v1.0.0)
-```
 
 ## References
+This project would not be possible without the exceptional work of Adam Ruka (OneFlow) and Vincent Driessen (GitFlow)
 - [OneFlow](https://www.endoflineblog.com/oneflow-a-git-branching-model-and-workflow)
 - [GitFlow](https://nvie.com/posts/a-successful-git-branching-model/)
