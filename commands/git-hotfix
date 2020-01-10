@@ -10,7 +10,7 @@ CMD=${1:-create}
 # make sure the aliases trigger the right
 # subcommand
 case "$CMD" in
-    s)
+    c)
         CMD='create'
         ;;
 
@@ -20,9 +20,9 @@ case "$CMD" in
 esac
 
 # get the settings from git config
-BRANCHPREFIX=$(git config --get webflow.prefix.hotfix)
-BRANCHFROM=$(git config --get webflow.branch.next)
-BRANCHRELEASE=$(git config --get webflow.branch.main)
+BRANCHPREFIX=$(git config --get nextflow.prefix.hotfix)
+BRANCHFROM=$(git config --get nextflow.branch.next)
+BRANCHRELEASE=$(git config --get nextflow.branch.main)
 HOTFIXNAME=$2
 BRANCH="${BRANCHPREFIX}$HOTFIXNAME"
 

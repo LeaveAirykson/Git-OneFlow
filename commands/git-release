@@ -3,11 +3,8 @@
 # Usage:
 # git release create|c version
 # # git release publish|p version
-
-bold="\033[1m"
 red="\033[31m"
 green="\033[32m"
-cyan="\033[36m"
 yellow="\033[33m"
 normal="\033[0m"
 
@@ -38,10 +35,10 @@ case "$CMD" in
 esac
 
 # get the settings from git config
-BRANCHPREFIX=$(git config --get webflow.prefix.release)
-BRANCHFROM=$(git config --get webflow.branch.next)
-BRANCHRELEASE=$(git config --get webflow.branch.main)
-VERSIONPREFIX=$(git config --get webflow.prefix.version)
+BRANCHPREFIX=$(git config --get nextflow.prefix.release)
+BRANCHFROM=$(git config --get nextflow.branch.next)
+BRANCHRELEASE=$(git config --get nextflow.branch.main)
+VERSIONPREFIX=$(git config --get nextflow.prefix.version)
 
 # make sure the 'next' branch exists
 # use the 'main' branch as a fallback
@@ -114,6 +111,9 @@ function publishRelease {
             usage
             exit 1
         fi
+
+        # set versionnumber variable to be used later on
+        VERSIONNUMBER=${$VERSIONTAG/"$VERSIONPREFIX"/''}
     fi
 
     # checkout release/vxxx branch
