@@ -1,3 +1,6 @@
+## v3.1.0
+- Use versiontag as commit message reference instead of versionnumber
+
 ## v3.0.0
 - Rename project to nextflow and introduce new install routine
 - Improve success messages in console
