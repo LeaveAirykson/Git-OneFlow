@@ -15,7 +15,7 @@ A simple and uncomplicated git workflow for implementing features, creating hotf
 
 ```bash
 # install via curl
-curl -sL https://raw.githubusercontent.com/LeaveAirykson/git-nextflow/master/install.sh | sudo bash -s install
+curl -sL https://raw.githubusercontent.com/LeaveAirykson/git-nextflow/master/install.sh | bash -s install
 
 # to uninstall just remove the script files
 rm /usr/local/bin/{git-feature,git-hotfix,git-release}

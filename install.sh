@@ -1,6 +1,10 @@
 #!/bin/bash
 # shellcheck disable=SC2063,SC2129,SC2181,SC2162
 
+# colors
+yellow="\033[33m"
+green="\033[32m"
+
 # defaults
 INSTPATH="/usr/local/bin"
 REPONAME="git-nextflow"
@@ -17,7 +21,7 @@ case "$1" in
 
     install )
         # greet
-        echo -e "Installing git nextflow commands"
+        echo -e "\n⮕ ${yellow}Installing git nextflow commands${normal}"
 
         # clone repo into tmp folder
         git clone "$REPOURL" --branch "$BRANCH" --single-branch "/tmp/$REPONAME"
@@ -36,7 +40,9 @@ case "$1" in
         git config --global nextflow.prefix.version "v"
 
         # remove tmp repo
-        rm -rf "/tmp/$REPONAME"
+        rm -rfv "/tmp/$REPONAME"
+
+        echo "⮕ ${green}Successfully installed git nextflow.${normal}"
 
         exit
         ;;
