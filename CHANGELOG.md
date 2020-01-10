@@ -1,3 +1,6 @@
+## v3.1.2
+- Cleanup README
+
 ## v3.1.1
 - Fix wiki link in README.md
 
