@@ -23,7 +23,7 @@ rm /usr/local/bin/{git-feature,git-hotfix,git-release}
 
 ## The Nextflow Model
 
-[See the Wiki](/wiki/) for a more detailed introduction into the Nextflow Model.
+[See the Wiki](https://github.com/LeaveAirykson/git-nextflow/wiki) for a more detailed introduction into the Nextflow Model.
 
 ## Commands
 
