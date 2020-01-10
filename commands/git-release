@@ -111,9 +111,6 @@ function publishRelease {
             usage
             exit 1
         fi
-
-        # set versionnumber variable to be used later on
-        VERSIONNUMBER=${$VERSIONTAG/"$VERSIONPREFIX"/''}
     fi
 
     # checkout release/vxxx branch
@@ -176,7 +173,7 @@ function publishRelease {
     echo "$VERSIONTAG" > .version && git add .version
 
     # Create final commit with updated changelog
-    git commit -m "Release version $VERSIONNUMBER" -m "$RELEASENOTES"
+    git commit -m "Release $VERSIONTAG" -m "$RELEASENOTES"
 
     # merge release/vxxx into develop
     git checkout "$BRANCHFROM"
@@ -187,7 +184,7 @@ function publishRelease {
     git merge "$BRANCHFROM" -m "Release $VERSIONTAG"
 
     # Create version tag on master
-    git tag -a "$VERSIONTAG" "$BRANCHFROM" -m "Release version $VERSIONNUMBER" -m "$RELEASENOTES"
+    git tag -a "$VERSIONTAG" "$BRANCHFROM" -m "Release $VERSIONTAG" -m "$RELEASENOTES"
 
     if git remote &> /dev/null; then
         # push the branches
