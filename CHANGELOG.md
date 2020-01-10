@@ -1,3 +1,6 @@
+## v3.1.1
+- Fix wiki link in README.md
+
 ## v3.1.0
 - Use versiontag as commit message reference instead of versionnumber
 
