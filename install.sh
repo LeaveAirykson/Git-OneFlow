@@ -4,6 +4,7 @@
 # colors
 yellow="\033[33m"
 green="\033[32m"
+normal="\033[0m"
 
 # defaults
 INSTPATH="/usr/local/bin"
@@ -29,6 +30,7 @@ case "$1" in
         # install commands from repo
         for cmd in "/tmp/$REPONAME/commands/"* ; do
             install -v -m 0644 "$cmd" "$INSTPATH"
+            chmod +x "$INSTPATH/$(basename $cmd)"
         done
 
         # set git configs
@@ -40,9 +42,9 @@ case "$1" in
         git config --global nextflow.prefix.version "v"
 
         # remove tmp repo
-        rm -rfv "/tmp/$REPONAME"
+        rm -rf "/tmp/$REPONAME"
 
-        echo "⮕ ${green}Successfully installed git nextflow.${normal}"
+        echo -e "⮕ ${green}Successfully installed git nextflow.${normal}"
 
         exit
         ;;
