@@ -1,3 +1,7 @@
+## v3.1.3
+- Fix install script not creating executables
+- Fix install instructions
+
 ## v3.1.2
 - Cleanup README
 
