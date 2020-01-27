@@ -1,3 +1,6 @@
+## v3.2.0
+- Change default install folder to ~/bin so we don't need sudo
+
 ## v3.1.3
 - Fix install script not creating executables
 - Fix install instructions
