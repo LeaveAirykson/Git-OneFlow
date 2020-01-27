@@ -18,7 +18,7 @@ A simple and uncomplicated git workflow for implementing features, creating hotf
 curl -sL https://raw.githubusercontent.com/LeaveAirykson/git-nextflow/master/install.sh | bash -s install
 
 # to uninstall just remove the script files
-rm /usr/local/bin/{git-feature,git-hotfix,git-release}
+rm ~/bin/{git-feature,git-hotfix,git-release}
 ```
 
 ## The Nextflow Model

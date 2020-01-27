@@ -7,7 +7,7 @@ green="\033[32m"
 normal="\033[0m"
 
 # defaults
-INSTPATH="/usr/local/bin"
+INSTPATH="$HOME/bin"
 REPONAME="git-nextflow"
 REPOURL="https://github.com/LeaveAirykson/git-nextflow"
 BRANCH=${2:-"master"}
