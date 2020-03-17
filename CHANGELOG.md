@@ -1,3 +1,6 @@
+## v3.3.0
+- Implement commit bodytext during feature finish
+
 ## v3.2.0
 - Change default install folder to ~/bin so we don't need sudo
 
