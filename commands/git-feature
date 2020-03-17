@@ -3,6 +3,10 @@
 # Usage:
 # git feature create|c [name]
 # git feature finish|f [name]
+red="\033[31m"
+green="\033[32m"
+yellow="\033[33m"
+normal="\033[0m"
 
 # Set default subcommand
 CMD=${1:-create}
@@ -69,15 +73,22 @@ function finishFeature {
     fi
 
     echo ""
+
+    # extract commit messages for final commit bodytext
+    FEATURENOTE=$(git log --pretty=format:'- %s' "$BRANCHFROM".."$BRANCH");
+
+    # Squash merge the feature into 'next' branch
     git checkout "$BRANCHFROM"
     git merge --squash "$BRANCH"
-    git commit -m "Implement feature '$FEATURENAME'"
+    git commit -m "Implement feature '$FEATURENAME'" -m "${FEATURENOTE}"
+
+    # delete the feature/ branch
     git branch -D "$BRANCH"
 
     if [ $? -eq 0 ]; then
-        echo -e "\nFeature $FEATURENAME successfully implemented!\n"
+        echo -e "\n⮕ ${green}Feature $FEATURENAME successfully implemented!${normal}\n"
     else
-        echo -e "\nERR: Problems occured during implementation of feature $FEATURENAME\n"
+        echo -e "\n⮕ ${red}ERR: Problems occured during implementation of feature $FEATURENAME${normal}\n"
     fi
 }
 
