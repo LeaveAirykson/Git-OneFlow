@@ -1,3 +1,6 @@
+## v4.0.0
+- Implement publish and finish option for all commands.
+
 ## v3.3.0
 - Implement commit bodytext during feature finish
 
