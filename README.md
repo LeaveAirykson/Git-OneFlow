@@ -57,6 +57,13 @@ The command starts the following workflow:
 
 1. Branch off from `next` as `feature/sidebar` branch.
 
+**git feature p [name]**
+
+```bash
+# publish the feature sidebar to remote
+git feature p sidebar
+```
+
 **git feature f [name]**
 
 ```bash
@@ -86,11 +93,18 @@ The command starts the following workflow:
 
 1. Branch off from `next` as `release/1.10.0` branch.
 
-**git release p [[version]]**
+**git release p [name]**
 
 ```bash
-# publish a release named 1.10.0
+# publish a release to origin.
 git release p 1.10.0
+```
+
+**git release f [[version]]**
+
+```bash
+# finish a release named 1.10.0
+git release f 1.10.0
 ```
 
 The command starts the following workflow:
@@ -100,6 +114,7 @@ The command starts the following workflow:
 3. Merge `next` into `main`.
 4. Tag commit as the release with release prefix (`v1.10.0`).
 5. Delete branch `release/1.10.0`.
+6. Pushes new update to the remote.
 
 ### Hotfixes
 
@@ -108,7 +123,7 @@ Hotfixes work in the same logic as features but with a different prefix and with
 **Recommendation:**
 Hotfixes should be postfixed with the version the bug was detected (f.e: `logo-fix@v1.1.0`).
 
-**git hotfix c (name)**
+**git hotfix c <name>**
 
 ```bash
 # create a hotfix named sidebar-logo@v1.10.1
@@ -117,6 +132,13 @@ git hotfix c sidebar-logo@v1.10.1
 The command starts the following workflow:
 
 1. Branch off from `next` as `hotfix/sidebar-logo@v1.10.1` branch
+
+**git hotfix p [name]**
+
+```bash
+# publish a release to origin.
+git hotfix p sidebar-logo@v1.10.1
+```
 
 **git hotfix f (name)**
 
