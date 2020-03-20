@@ -3,6 +3,7 @@
 # Usage:
 # git release create|c version
 # # git release publish|p version
+# # git release finish|f version
 red="\033[31m"
 green="\033[32m"
 yellow="\033[33m"
@@ -32,6 +33,9 @@ case "$CMD" in
     p)
         CMD='publish'
         ;;
+    f)
+        CMD='finish'
+        ;;
 esac
 
 # get the settings from git config
@@ -55,7 +59,7 @@ BRANCH="${BRANCHPREFIX}${VERSIONTAG}"
 WORKINGDIRDIRTY=$(git status --porcelain)
 CURRENTBRANCH=$(git branch | grep \* | cut -d ' ' -f2)
 
-# third parameter in release [create|publish] [version] [commit]
+# third parameter in release [create|publish|finish] [version] [commit]
 # is used as a reference to branch off from.
 BRANCHFROM=${3:-$BRANCHFROM}
 
@@ -67,7 +71,8 @@ BRANCHFROM=${3:-$BRANCHFROM}
 # Help function showing usage of the command
 usage() {
     echo -e "Usage:\ngit release create|c [version] [commit]\n"
-    echo -e "Usage:\ngit release publish|p [version]\n"
+    echo -e "git release publish|p [version]"
+    echo -e "git release finish|f [version]\n"
 }
 
 # creates a release branch and optionally pushes it to the remote
@@ -84,12 +89,17 @@ function createRelease {
     # checkout release/vxxx branch
     git checkout -b "$BRANCH" "$BRANCHFROM"
 
-    echo "Make sure to push the release if its not finished yet so others can add commits to it."
+    echo "Make sure to publish the release if its not finished yet so others can add commits to it."
+}
+
+# pushes the branch to remote
+function publishRelease {
+    git push -u origin "$BRANCH"
 }
 
 # merges release branch into develop and creates
 # fast forward merge into master to create release tag.
-function publishRelease {
+function finishRelease {
 
     # assume current branch is a release/ branch
     #  if no version number is given
@@ -192,7 +202,7 @@ function publishRelease {
     fi
 
     if [ $? -eq 0 ]; then
-        echo -e "\n⮕ ${green}Release $VERSIONTAG successfully created!${normal}\n"
+        echo -e "\n⮕ ${green}Release $VERSIONTAG successfully finished!${normal}\n"
     else
         echo -e "\n⮕ ${red}ERR: Problems occured during creation of release:${normal} $VERSIONTAG\n"
         exit 1
@@ -283,6 +293,11 @@ case "$CMD" in
 
     publish)
         publishRelease
+        exit
+        ;;
+
+    finish)
+        finishRelease
         exit
         ;;
 

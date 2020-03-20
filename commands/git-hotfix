@@ -43,6 +43,12 @@ usage() {
     echo -e "git hotfix finish|f [name]\n"
 }
 
+# pushes the branch to remote
+function publishHotfix {
+    git push -u origin "$BRANCH"
+}
+
+
 # merges hotfix branch into develop.
 function finishHotfix {
 
@@ -81,7 +87,7 @@ function finishHotfix {
 }
 
 # abort if the [name] is missing and show the help
-if [ -z "$2" ] && [ ! "$CMD" == "finish" ] ; then
+if [ -z "$2" ] && [ "$CMD" == "create" ] ; then
     echo -e "\nERR: Parameter missing or command not found!\n"
     usage
     exit 1
@@ -89,9 +95,15 @@ fi
 
 # abort if working directory is dirty
 if [ "$WORKINGDIRDIRTY" ] ; then
-    echo -e "\nERR: Your working directory is dirty!\n"
+    echo -e "\n⮕ ${yellow}Warning:${normal} Your working directory is dirty!\n"
     git status
-    exit 1
+    echo -e "${yellow}"
+    read -p "Proceed anyway? (Y/n) " proceedDirty
+    echo -e "${normal}"
+
+    if [ ! "$proceedDirty" == "Y" ]; then
+        exit 1
+    fi
 fi
 
 # the main logic handler.
@@ -104,6 +116,11 @@ case "$CMD" in
         else
             git checkout -b "$BRANCH" "$BRANCHFROM"
         fi
+        exit
+        ;;
+
+    publish)
+        publishHotfix
         exit
         ;;
 

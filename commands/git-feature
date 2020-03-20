@@ -3,6 +3,7 @@
 # Usage:
 # git feature create|c [name]
 # git feature finish|f [name]
+# # git feature publish|p [name]
 red="\033[31m"
 green="\033[32m"
 yellow="\033[33m"
@@ -17,7 +18,9 @@ case "$CMD" in
     c)
         CMD='create'
         ;;
-
+    p)
+        CMD='publish'
+        ;;
     f)
         CMD='finish'
         ;;
@@ -32,7 +35,7 @@ BRANCH="${BRANCHPREFIX}$FEATURENAME"
 
 # make sure the 'next' branch exists
 # use the 'main' branch as a fallback
-if ! git rev-parse --quiet --verify "$BRANCHFROM"; then
+if ! git rev-parse --quiet --verify "$BRANCHFROM" &> /dev/null; then
     BRANCHFROM=$BRANCHRELEASE
 fi
 
@@ -44,6 +47,7 @@ CURRENTBRANCH=$(git branch | grep \* | cut -d ' ' -f2)
 # Help function showing usage of the command
 usage() {
     echo -e "Usage:\ngit feature create|c [name]"
+    echo -e "git feature publish|p [name]"
     echo -e "git feature finish|f [name]\n"
 }
 
@@ -92,8 +96,13 @@ function finishFeature {
     fi
 }
 
+# pushes the branch to remote
+function publishFeature {
+    git push -u origin "$BRANCH"
+}
+
 # abort if the [name] is missing and show the help
-if [ -z "$2" ] && [ ! "$CMD" == "finish" ] ; then
+if [ -z "$2" ] && [ "$CMD" == "create" ] ; then
     echo -e "\nERR: Parameter missing or command not found!\n"
     usage
     exit 1
@@ -101,9 +110,15 @@ fi
 
 # abort if working directory is dirty
 if [ "$WORKINGDIRDIRTY" ] ; then
-    echo -e "\nERR: Your working directory is dirty!\n"
+    echo -e "\n⮕ ${yellow}Warning:${normal} Your working directory is dirty!\n"
     git status
-    exit 1
+    echo -e "${yellow}"
+    read -p "Proceed anyway? (Y/n) " proceedDirty
+    echo -e "${normal}"
+
+    if [ ! "$proceedDirty" == "Y" ]; then
+        exit 1
+    fi
 fi
 
 # the main logic handler.
@@ -121,6 +136,11 @@ case "$CMD" in
 
     finish)
         finishFeature
+        exit
+        ;;
+
+    publish)
+        publishFeature
         exit
         ;;
 
