@@ -1,3 +1,6 @@
+## v4.0.1
+- Update Readme
+
 ## v4.0.0
 - Implement publish and finish option for all commands.
 
