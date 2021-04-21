@@ -3,7 +3,8 @@
 # Usage:
 # git feature create|c [name]
 # git feature finish|f [name]
-# # git feature publish|p [name]
+# git feature publish|p [name]
+# Colors
 red="\033[31m"
 green="\033[32m"
 yellow="\033[33m"
@@ -15,13 +16,13 @@ CMD=${1:-create}
 # make sure the aliases trigger the right
 # subcommand
 case "$CMD" in
-    c)
+    c|create)
         CMD='create'
         ;;
-    p)
+    p|publish)
         CMD='publish'
         ;;
-    f)
+    f|finish)
         CMD='finish'
         ;;
 esac
@@ -30,6 +31,7 @@ esac
 BRANCHPREFIX=$(git config --get nextflow.prefix.feature)
 BRANCHFROM=$(git config --get nextflow.branch.next)
 BRANCHRELEASE=$(git config --get nextflow.branch.main)
+STRATEGY=$(git config --get nextflow.general.strategy)
 FEATURENAME=$2
 BRANCH="${BRANCHPREFIX}$FEATURENAME"
 
@@ -78,17 +80,30 @@ function finishFeature {
 
     echo ""
 
-    # extract commit messages for final commit bodytext
-    FEATURENOTE=$(git log --pretty=format:'- %s' "$BRANCHFROM".."$BRANCH");
-
-    # Squash merge the feature into 'next' branch
-    git checkout "$BRANCHFROM"
-    git merge --squash "$BRANCH"
-    git commit -m "Implement feature '$FEATURENAME'" -m "${FEATURENOTE}"
-
-    # delete the feature/ branch
-    git branch -D "$BRANCH"
-
+    # The setting "nextflow.general.strategy" controls how
+    # additional branches are merged into the 'next' and 'main' branch.
+    case $STRATEGY in
+        alternate)
+            # merge without fast-forward into 'next' branch
+            git checkout "$BRANCHFROM"
+            git merge --no-ff "$BRANCH" -m "Implement $BRANCH"
+            # tag the merge with feature name
+            git tag "$BRANCH"
+            # and delete its feature/* branch
+            git branch -d "$BRANCH"
+        ;;
+        *)
+            # extract commit messages for final commit bodytext
+            FEATURENOTE=$(git log --pretty=format:'- %s' "$BRANCHFROM".."$BRANCH");
+            # Squash merge the feature into 'next' branch
+            git checkout "$BRANCHFROM"
+            git merge --squash "$BRANCH"
+            git commit -m "Implement feature '$FEATURENAME'" -m "${FEATURENOTE}"
+            # delete the feature/* branch
+            git branch -D "$BRANCH"
+        ;;
+    esac
+    
     if [ $? -eq 0 ]; then
         echo -e "\n⮕ ${green}Feature $FEATURENAME successfully implemented!${normal}\n"
     else
@@ -125,7 +140,7 @@ fi
 case "$CMD" in
     create)
         if [ "$BRANCHEXISTS" ] ; then
-            echo -e "\nERR: Branch $BRANCH already exists!\n"
+            echo -e "\n${red}ERR: Branch $BRANCH already exists!${normal}\n"
             exit 1
 
         else

@@ -40,6 +40,7 @@ case "$1" in
         git config --global nextflow.prefix.hotfix "hotfix/"
         git config --global nextflow.prefix.release "release/"
         git config --global nextflow.prefix.version "v"
+        git config --global nextflow.general.strategy "default"
 
         # remove tmp repo
         rm -rf "/tmp/$REPONAME"

@@ -9,14 +9,6 @@ green="\033[32m"
 yellow="\033[33m"
 normal="\033[0m"
 
-
-# =================================
-# REQUIREMENTS
-# =================================
-# make sure to always pull first to correctly
-# check for changes
-git remote update &> /dev/null
-
 # =================================
 # DEFINE VARIABLES/DEFAULTS
 # =================================
@@ -27,13 +19,13 @@ CMD=${1:-create}
 # make sure the aliases trigger the right
 # subcommand
 case "$CMD" in
-    c)
+    c|create)
         CMD='create'
         ;;
-    p)
+    p|publish)
         CMD='publish'
         ;;
-    f)
+    f|finish)
         CMD='finish'
         ;;
 esac
@@ -43,6 +35,11 @@ BRANCHPREFIX=$(git config --get nextflow.prefix.release)
 BRANCHFROM=$(git config --get nextflow.branch.next)
 BRANCHRELEASE=$(git config --get nextflow.branch.main)
 VERSIONPREFIX=$(git config --get nextflow.prefix.version)
+STRATEGY=$(git config --get nextflow.general.strategy)
+COMPAREURL=$(git config --get nextflow.general.compareurl);
+COMMITURL=$(git config --get nextflow.general.commiturl);
+TMPRELEASENOTE="_tmp-release-note.md";
+TMPRELEASEMSG="_tmp-release-message.md";
 
 # make sure the 'next' branch exists
 # use the 'main' branch as a fallback
@@ -59,10 +56,20 @@ BRANCH="${BRANCHPREFIX}${VERSIONTAG}"
 WORKINGDIRDIRTY=$(git status --porcelain)
 CURRENTBRANCH=$(git branch | grep \* | cut -d ' ' -f2)
 
-# third parameter in release [create|publish|finish] [version] [commit]
-# is used as a reference to branch off from.
-BRANCHFROM=${3:-$BRANCHFROM}
-
+# do work based on used strategy option
+if [ "$STRATEGY" == "alternate" ]; then
+    # this will set the LASTVERSION and CURRENTVERSION based on
+    # annotated tags and data from package.json
+    LASTVERSION='master'
+    CURRENTVERSION=$(cat package.json | grep version | head -1 | awk -F: '{ print $2 }' | sed 's/[",]//g'| tr -d '[[:space:]]');
+    if git describe --abbrev=0 "$BRANCHRELEASE" &> /dev/null; then
+        LASTVERSION=$(git describe --abbrev=0 "$BRANCHRELEASE");
+    fi
+else
+    # third parameter in release [create|publish|finish] [version] [commit]
+    # is used as a reference to branch off from.
+    BRANCHFROM=${3:-$BRANCHFROM}
+fi
 
 # =================================
 # FUNCTIONS
@@ -73,6 +80,9 @@ usage() {
     echo -e "Usage:\ngit release create|c [version] [commit]\n"
     echo -e "git release publish|p [version]"
     echo -e "git release finish|f [version]\n"
+    echo -e "With 'alternate' strategy:"
+    echo -e "Usage:\ngit release create|c [version]\n"
+    echo -e "git release finish|f\n"
 }
 
 # creates a release branch and optionally pushes it to the remote
@@ -83,13 +93,53 @@ function createRelease {
 
         echo -e "\nERR: No release name given!\n"
         exit 1
-
     fi
 
-    # checkout release/vxxx branch
-    git checkout -b "$BRANCH" "$BRANCHFROM"
+    # make sure version does not start with tag prefix
+    # but instead represents a valid semver syntax or npm version option.
+    if [[ ${VERSIONNUMBER:0:1} == "$VERSIONPREFIX" ]]; then
+        echo -e "\n⮕ ${red}ERR: Version starts with version tag prefix: '$VERSIONPREFIX'.${normal}";
+        echo -e "\nThis is not allowed.\nUse full semver syntax like: 1.2.0";
+        echo -e "Or if you use alternate strategy, any of these npm version options:\nmajor, minor, patch.";
+        exit 1
+    fi
 
-    echo "Make sure to publish the release if its not finished yet so others can add commits to it."
+    echo -e "${yellow}⮕${normal} Create release ${VERSIONNUMBER}"
+
+    case $STRATEGY in
+        alternate)
+            # make sure to checkout 'next' branch
+            git checkout "$BRANCHFROM" 1> /dev/null
+
+            # use npm version if package.json exists
+            if [ -f package.json ]; then
+                echo -e "\n${yellow}⮕${normal} Bump package version"
+                VERSION=$(npm --silent --no-git-tag-version version "$VERSIONNUMBER");
+                VERSIONTAG=$(echo "$VERSION" | head -1)
+            else
+                # warn if npm version param is given but no package.json found
+                if [[ $VERSIONNUMBER == 'major' || $VERSIONNUMBER == 'minor' || $VERSIONNUMBER == 'patch' ]]; then
+                    echo -e "${red}⮕ ERR: No package.json file found!${normal}"
+                    exit 1
+                fi
+            fi
+
+            # extract version number without prefix
+            VERSION=${VERSIONTAG/#$VERSIONPREFIX/}
+
+            writeChangelogAlternate "$VERSION" \
+            && echo -e "${green}⮕ Release $VERSION created.${normal}" \
+            && echo -e "Continue with updating the CHANGELOG.md and then call:\ngit release f";
+            exit 0
+        ;;
+        *)
+            # checkout release/vxxx branch
+            git checkout -b "$BRANCH" "$BRANCHFROM"
+
+            echo "Make sure to publish the release if its not finished yet so others can add commits to it."
+        ;;
+    esac
+    
 }
 
 # pushes the branch to remote
@@ -116,7 +166,7 @@ function finishRelease {
         if [[ ! "$BRANCH" =~ $BRANCHPREFIX ]]; then
             echo -e "\n⮕ ${red}ERR: Couldn't find the right release branch.${normal}\n"
             echo -e "Please give either a version name like this:"
-            echo -e "=> git release publish v1.5.0"
+            echo -e "git release finish 1.5.0"
             echo -e "or checkout the branch you want to finish.\n"
             usage
             exit 1
@@ -137,7 +187,7 @@ function finishRelease {
     else
         # tell user there is no recent version
         LASTVERSION='false'
-        echo "${yellow}No recent version found.${normal}"
+        echo "No recent version found."
         echo "Using full history as reference."
     fi
 
@@ -216,6 +266,42 @@ function finishRelease {
     git checkout "$BRANCHFROM" &> /dev/null
 }
 
+# used by 'alternate' strategy.
+function finishReleaseAlternate {
+
+    # make sure to checkout 'next' branch
+    if [ ! "$CURRENTBRANCH" == "$BRANCHFROM" ]; then
+        git checkout "$BRANCHFROM"
+    fi
+
+    echo -e "${yellow}⮕${normal} Commit release"
+
+    # make sure everything is added
+    git add --all
+    git commit -m "Bump version to ${CURRENTVERSION}"
+    git checkout "$BRANCHRELEASE"
+    git merge --no-ff "$BRANCHFROM" -m "Release ${CURRENTVERSION}"
+    git tag -a "${VERSIONPREFIX}${CURRENTVERSION}" -m "Release ${CURRENTVERSION}"
+
+    # push if remote exists
+    if git remote &> /dev/null; then
+        echo -e "${yellow}⮕${normal} Publish release"
+        git push --follow-tags
+    fi
+
+    # show success message if everything went well
+    if [ $? -eq 0 ]; then
+        echo -e "\n⮕ ${green}Release ${CURRENTVERSION} finished!${normal}\n"
+    else
+        echo -e "\n⮕ ${red}ERR: Problems occured during creation of release:${normal} $CURRENTVERSION\n"
+        exit 1
+    fi
+
+    # finally check out 'next' branch so users don't
+    # continue working on the 'main' branch.
+    git checkout "$BRANCHFROM" &> /dev/null
+}
+
 # Automatically prepends an entry in the CHANGELOG.md file based on
 # the commit messages between the last release tag.
 # Will prompt the user if they want to autocreate the entry and if they
@@ -252,12 +338,66 @@ function createChangelogFromLog {
     cat _tmp-release-note.txt;
 }
 
+# Automatically prepends an entry in the CHANGELOG.md 
+# file based on the commit messages between the last release tag.
+# Will prompt the user if they want to autocreate the 
+# entry and if they want to manually edit it afterwards.
+function writeChangelogAlternate {
+    VERSION="$1";
+    DATE=$(date +%Y-%m-%d);
+    HEADLINE="# ${VERSION} - ${DATE}";
+
+    echo -e "${yellow}⮕${normal} Update CHANGELOG.md for $VERSION"
+
+    if [[ -n $COMMITURL ]]; then
+        COMMITLINK=${COMMITURL/"{commit}"/"%H"};
+        COMMITLINK="([%h]($COMMITLINK))";
+    else
+        COMMITLINK="(%h)"
+    fi
+
+    # extract commits from log into tmp file
+    git log --pretty=format:"- $COMMITLINK %s %b" "$BRANCHRELEASE".."$BRANCHFROM" > $TMPRELEASENOTE;
+
+    # use url to branch comparison between old and new release
+    if [[ -n $COMPAREURL ]]; then
+        COMPAREURL=${COMPAREURL/"{old}"/$LASTVERSION};
+        COMPAREURL=${COMPAREURL/"{new}"/$VERSIONPREFIX$VERSION};
+        HEADLINE="# [${VERSION}](${COMPAREURL}) - ${DATE}";
+    fi
+
+    # start default changelog block
+    TMPCONTENT="$HEADLINE\n\n";
+    TMPCONTENT+="### Breaking changes\n\n";
+    TMPCONTENT+="### Deprecated\n\n";
+    TMPCONTENT+="### Fixed\n\n";
+    TMPCONTENT+="### Added\n\n";
+    TMPCONTENT+="### Changed\n\n";
+
+    # put content into tmp changelog
+    echo -e "$TMPCONTENT" > $TMPRELEASEMSG;
+    # attach the release note content
+    cat $TMPRELEASENOTE >> $TMPRELEASEMSG;
+    # add a new line
+    echo -e "\n---\n" >> $TMPRELEASEMSG;
+
+    # attach old changelog content if it exists
+    if [ -f CHANGELOG.md ]; then
+        cat CHANGELOG.md >> $TMPRELEASEMSG;
+    fi
+
+    # overwrite original changelog file
+    # and delete tmp files
+    mv $TMPRELEASEMSG CHANGELOG.md;
+    rm $TMPRELEASENOTE;
+}
+
 
 # =================================
 # CHECKS
 # =================================
 # abort if working directory is dirty
-if [ "$WORKINGDIRDIRTY" ] ; then
+if [ "$WORKINGDIRDIRTY" ] && [ "$STRATEGY" == "default" ] ; then
     echo -e "\nERR: Your working directory is dirty!\n"
     git status
     exit 1
@@ -292,12 +432,21 @@ case "$CMD" in
         ;;
 
     publish)
-        publishRelease
+        if [ "$STRATEGY" == 'alternate' ]; then
+            echo "Publish does not work with 'alternate' strategy.";
+        else
+            publishRelease
+        fi
         exit
         ;;
 
     finish)
-        finishRelease
+        if [ "$STRATEGY" == 'alternate' ]; then
+            finishReleaseAlternate
+        else
+            finishRelease
+        fi
+
         exit
         ;;
 

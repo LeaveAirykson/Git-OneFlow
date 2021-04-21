@@ -3,6 +3,11 @@
 # Usage:
 # git hotfix create|c [name]
 # git hotfix finish|f [name]
+# Colors
+red="\033[31m"
+green="\033[32m"
+yellow="\033[33m"
+normal="\033[0m"
 
 # Set default subcommand
 CMD=${1:-create}
@@ -10,11 +15,13 @@ CMD=${1:-create}
 # make sure the aliases trigger the right
 # subcommand
 case "$CMD" in
-    c)
+    c|create)
         CMD='create'
         ;;
-
-    f)
+    p|publish)
+        CMD='publish'
+        ;;
+    f|finish)
         CMD='finish'
         ;;
 esac
@@ -23,12 +30,13 @@ esac
 BRANCHPREFIX=$(git config --get nextflow.prefix.hotfix)
 BRANCHFROM=$(git config --get nextflow.branch.next)
 BRANCHRELEASE=$(git config --get nextflow.branch.main)
+STRATEGY=$(git config --get nextflow.general.strategy)
 HOTFIXNAME=$2
 BRANCH="${BRANCHPREFIX}$HOTFIXNAME"
 
 # make sure the 'next' branch exists
 # use the 'main' branch as a fallback
-if ! git rev-parse --quiet --verify "$BRANCHFROM"; then
+if ! git rev-parse --quiet --verify "$BRANCHFROM" &> /dev/null; then
     BRANCHFROM=$BRANCHRELEASE
 fi
 
@@ -40,14 +48,9 @@ CURRENTBRANCH=$(git branch | grep \* | cut -d ' ' -f2)
 # Help function showing usage of the command
 usage() {
     echo -e "Usage:\ngit hotfix create|c [name]"
+    echo -e "git hotfix publish|p [name]"
     echo -e "git hotfix finish|f [name]\n"
 }
-
-# pushes the branch to remote
-function publishHotfix {
-    git push -u origin "$BRANCH"
-}
-
 
 # merges hotfix branch into develop.
 function finishHotfix {
@@ -75,15 +78,36 @@ function finishHotfix {
     fi
 
     echo ""
-    git checkout "$BRANCHFROM"
-    git merge "$BRANCH" -m "Implement hotfix '$HOTFIXNAME'"
-    git branch -d "$BRANCH"
 
+    # The setting "nextflow.general.strategy" controls how
+    # additional branches are merged into the 'next' and 'main' branch.
+    case $STRATEGY in
+        alternate)
+            # merge without fast-forward into 'next' branch
+            git checkout "$BRANCHFROM"
+            git merge --no-ff "$BRANCH" -m "Implement $BRANCH"
+            # tag the merge with hotfix name
+            git tag "$BRANCH"
+            # and delete its hotfix/* branch
+            git branch -d "$BRANCH"
+        ;;
+        *)
+	    git checkout "$BRANCHFROM"
+	    git merge "$BRANCH" -m "Implement hotfix '$HOTFIXNAME'"
+	    git branch -d "$BRANCH"
+        ;;
+    esac
+    
     if [ $? -eq 0 ]; then
-        echo -e "\nhotfix $HOTFIXNAME successfully implemented!\n"
+        echo -e "\n⮕ ${green}Hotfix $HOTFIXNAME successfully implemented!${normal}\n"
     else
-        echo -e "\nERR: Problems occured during implementation of hotfix $HOTFIXNAME\n"
+        echo -e "\n⮕ ${red}ERR: Problems occured during implementation of hotfix $HOTFIXNAME${normal}\n"
     fi
+}
+
+# pushes the branch to remote
+function publishHotfix {
+    git push -u origin "$BRANCH"
 }
 
 # abort if the [name] is missing and show the help
@@ -110,7 +134,7 @@ fi
 case "$CMD" in
     create)
         if [ "$BRANCHEXISTS" ] ; then
-            echo -e "\nERR: Branch $BRANCH already exists!\n"
+            echo -e "\n${red}ERR: Branch $BRANCH already exists!${normal}\n"
             exit 1
 
         else
@@ -119,13 +143,13 @@ case "$CMD" in
         exit
         ;;
 
-    publish)
-        publishHotfix
+    finish)
+        finishHotfix
         exit
         ;;
 
-    finish)
-        finishHotfix
+    publish)
+        publishHotfix
         exit
         ;;
 
