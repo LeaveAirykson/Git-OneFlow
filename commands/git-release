@@ -104,12 +104,12 @@ function createRelease {
         exit 1
     fi
 
-    echo -e "${yellow}⮕${normal} Create release ${VERSIONNUMBER}"
-
     case $STRATEGY in
         alternate)
             # make sure to checkout 'next' branch
-            git checkout "$BRANCHFROM" 1> /dev/null
+            if [ ! "$CURRENTBRANCH" == "$BRANCHFROM" ]; then
+                git checkout "$BRANCHFROM"
+            fi
 
             # use npm version if package.json exists
             if [ -f package.json ]; then
@@ -128,7 +128,7 @@ function createRelease {
             VERSION=${VERSIONTAG/#$VERSIONPREFIX/}
 
             writeChangelogAlternate "$VERSION" \
-            && echo -e "${green}⮕ Release $VERSION created.${normal}" \
+            && echo -e "\n${green}⮕ Release $VERSION created.${normal}" \
             && echo -e "Continue with updating the CHANGELOG.md and then call:\ngit release f";
             exit 0
         ;;
@@ -252,9 +252,9 @@ function finishRelease {
     fi
 
     if [ $? -eq 0 ]; then
-        echo -e "\n⮕ ${green}Release $VERSIONTAG successfully finished!${normal}\n"
+        echo -e "\n⮕ ${green}Release $VERSIONTAG successfully finished!${normal}"
     else
-        echo -e "\n⮕ ${red}ERR: Problems occured during creation of release:${normal} $VERSIONTAG\n"
+        echo -e "\n⮕ ${red}ERR: Problems occured during creation of release:${normal} $VERSIONTAG"
         exit 1
     fi
 
@@ -274,7 +274,7 @@ function finishReleaseAlternate {
         git checkout "$BRANCHFROM"
     fi
 
-    echo -e "${yellow}⮕${normal} Commit release"
+    echo -e "\n${yellow}⮕${normal} Create and commit tagged release"
 
     # make sure everything is added
     git add --all
@@ -285,15 +285,15 @@ function finishReleaseAlternate {
 
     # push if remote exists
     if git remote &> /dev/null; then
-        echo -e "${yellow}⮕${normal} Publish release"
+        echo -e "\n${yellow}⮕${normal} Push release"
         git push --follow-tags
     fi
 
     # show success message if everything went well
     if [ $? -eq 0 ]; then
-        echo -e "\n⮕ ${green}Release ${CURRENTVERSION} finished!${normal}\n"
+        echo -e "\n${green}⮕${normal} Release ${CURRENTVERSION} finished!"
     else
-        echo -e "\n⮕ ${red}ERR: Problems occured during creation of release:${normal} $CURRENTVERSION\n"
+        echo -e "\n⮕ ${red}ERR: Problems occured during creation of release:${normal} $CURRENTVERSION"
         exit 1
     fi
 
@@ -347,7 +347,7 @@ function writeChangelogAlternate {
     DATE=$(date +%Y-%m-%d);
     HEADLINE="# ${VERSION} - ${DATE}";
 
-    echo -e "${yellow}⮕${normal} Update CHANGELOG.md for $VERSION"
+    echo -e "\n${yellow}⮕${normal} Update CHANGELOG.md for $VERSION"
 
     if [[ -n $COMMITURL ]]; then
         COMMITLINK=${COMMITURL/"{commit}"/"%H"};
@@ -357,7 +357,7 @@ function writeChangelogAlternate {
     fi
 
     # extract commits from log into tmp file
-    git log --pretty=format:"- $COMMITLINK %s %b" "$BRANCHRELEASE".."$BRANCHFROM" > $TMPRELEASENOTE;
+    git log --pretty=format:"- $COMMITLINK %s" "$BRANCHRELEASE".."$BRANCHFROM" > $TMPRELEASENOTE;
 
     # use url to branch comparison between old and new release
     if [[ -n $COMPAREURL ]]; then
@@ -433,7 +433,7 @@ case "$CMD" in
 
     publish)
         if [ "$STRATEGY" == 'alternate' ]; then
-            echo "Publish does not work with 'alternate' strategy.";
+            echo "Publish does not work with 'alternate' strategy, because it will be published during 'git release f'.";
         else
             publishRelease
         fi
