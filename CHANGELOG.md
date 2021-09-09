@@ -1,3 +1,7 @@
+## v4.2.0
+- Refactor git-release to improve verbosity and add use only commit subject for changelog.
+
+
 ## v4.1.0
 
 - Add alternate strategy.
