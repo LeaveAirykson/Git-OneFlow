@@ -115,7 +115,7 @@ function createRelease {
             if [ -f package.json ]; then
                 echo -e "\n${yellow}⮕${normal} Bump package version"
                 VERSION=$(npm --silent --no-git-tag-version version "$VERSIONNUMBER");
-                VERSIONTAG=$(echo "$VERSION" | head -1)
+                VERSIONTAG=$(echo "$VERSION" | tail -1)
             else
                 # warn if npm version param is given but no package.json found
                 if [[ $VERSIONNUMBER == 'major' || $VERSIONNUMBER == 'minor' || $VERSIONNUMBER == 'patch' ]]; then
