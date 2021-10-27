@@ -1,3 +1,6 @@
+## v4.2.1
+- Fix alternate release strategy empty versiontag when hooks are used for npm version
+
 ## v4.2.0
 - Refactor git-release to improve verbosity and add use only commit subject for changelog.
 
