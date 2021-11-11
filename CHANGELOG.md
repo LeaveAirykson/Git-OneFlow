@@ -1,3 +1,6 @@
+## v4.3.0
+- Change format for git log in changelog creation (alternate)
+
 ## v4.2.1
 - Fix alternate release strategy empty versiontag when hooks are used for npm version
 
