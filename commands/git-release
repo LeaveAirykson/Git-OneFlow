@@ -357,7 +357,7 @@ function writeChangelogAlternate {
     fi
 
     # extract commits from log into tmp file
-    git log --pretty=format:"- $COMMITLINK %s" "$BRANCHRELEASE".."$BRANCHFROM" > $TMPRELEASENOTE;
+    git log --pretty=format:"- %s $COMMITLINK" "$BRANCHRELEASE".."$BRANCHFROM" > $TMPRELEASENOTE;
 
     # use url to branch comparison between old and new release
     if [[ -n $COMPAREURL ]]; then
