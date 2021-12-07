@@ -1,3 +1,6 @@
+## v4.4.0
+- Write changelog based on commit prefix in alternate strategy
+
 ## v4.3.0
 - Change format for git log in changelog creation (alternate)
 
