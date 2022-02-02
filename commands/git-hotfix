@@ -86,7 +86,7 @@ function finishHotfix {
         # merge without fast-forward into 'next' branch
         git checkout "$BRANCHFROM"
         git merge --squash "$BRANCH"
-        git commit -m "Implement $BRANCH"
+        git commit -m "[fix] Implement $BRANCH"
         # tag the merge with hotfix name
         git tag "$BRANCH"
         # and delete its hotfix/* branch

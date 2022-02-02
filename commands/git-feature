@@ -87,7 +87,7 @@ function finishFeature {
         # merge without fast-forward into 'next' branch
         git checkout "$BRANCHFROM"
         git merge --squash "$BRANCH"
-        git commit -m "Implement $BRANCH"
+        git commit -m "[add] Implement $BRANCH"
         # tag the merge with feature name
         git tag "$BRANCH"
         # and delete its feature/* branch
