@@ -417,19 +417,19 @@ function writeChangelogAlternate {
     # start default changelog block
     TMPCONTENT="$HEADLINE"
     if [ -n "$LOG_BREAKS" ]; then
-        LOG_BREAKS="${LOG_BREAKS//\[break\]/''}"
+        LOG_BREAKS="${LOG_BREAKS// \[break\]/''}"
         TMPCONTENT+="\n\n### Breaking changes\n\n$LOG_BREAKS"
     fi
     if [ -n "$LOG_FIXED" ]; then
-        LOG_FIXED="${LOG_FIXED//\[fix\]/''}"
+        LOG_FIXED="${LOG_FIXED// \[fix\]/''}"
         TMPCONTENT+="\n\n### Fixed\n\n$LOG_FIXED"
     fi
     if [ -n "$LOG_ADDED" ]; then
-        LOG_ADDED="${LOG_ADDED//\[add\]/''}"
+        LOG_ADDED="${LOG_ADDED// \[add\]/''}"
         TMPCONTENT+="\n\n### Added\n\n$LOG_ADDED"
     fi
     if [ -n "$LOG_CHANGED" ]; then
-        LOG_CHANGED="${LOG_CHANGED//\[change\]/''}"
+        LOG_CHANGED="${LOG_CHANGED// \[change\]/''}"
         TMPCONTENT+="\n\n### Changed\n\n$LOG_CHANGED"
     fi
 
