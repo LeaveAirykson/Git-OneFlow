@@ -1,3 +1,13 @@
+# 4.6.0 - 2022-02-02
+
+### Fixed
+
+- Fix replacement of commit prefixes in changelog missing whitespaces (7eae804)
+
+### Changed
+
+- Add commit prefixes to feature and hotfix (0a41840)
+
 # 4.5.0 - 2022-02-02
 
 ### Changed

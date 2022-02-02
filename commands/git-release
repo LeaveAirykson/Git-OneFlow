@@ -432,8 +432,12 @@ function writeChangelogAlternate {
         LOG_CHANGED="${LOG_CHANGED// \[change\]/''}"
         TMPCONTENT+="\n\n### Changed\n\n$LOG_CHANGED"
     fi
+    if [ -n "$LOG_MISC" ]; then
+        TMPCONTENT+="\n\n### Misc\n\n$LOG_MISC"
+    fi
 
-    TMPCONTENT+="\n\n### Misc\n\n$LOG_MISC\n\n"
+    # add final new line
+    TMPCONTENT+="\n\n"
 
     # put content into tmp changelog
     echo -e "$TMPCONTENT" >$TMPRELEASEMSG
