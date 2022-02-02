@@ -31,9 +31,9 @@ f | finish)
 esac
 
 # get the settings from git config
-BRANCHPREFIX=$(git config --get nextflow.prefix.release)
-BRANCHFROM=$(git config --get nextflow.branch.next)
-BRANCHRELEASE=$(git config --get nextflow.branch.main)
+RELEASEPREFIX=$(git config --get nextflow.prefix.release)
+NEXTBRANCH=$(git config --get nextflow.branch.next)
+MAINBRANCH=$(git config --get nextflow.branch.main)
 VERSIONPREFIX=$(git config --get nextflow.prefix.version)
 STRATEGY=$(git config --get nextflow.general.strategy)
 COMPAREURL=$(git config --get nextflow.general.compareurl)
@@ -48,18 +48,20 @@ fi
 
 # make sure the 'next' branch exists
 # use the 'main' branch as a fallback
-if ! git rev-parse --quiet --verify "$BRANCHFROM" &>/dev/null; then
-    BRANCHFROM=$BRANCHRELEASE
+if ! git rev-parse --quiet --verify "$NEXTBRANCH" &>/dev/null; then
+    NEXTBRANCH=$MAINBRANCH
 fi
 
 # build final versiontag name and branch name
 VERSIONNUMBER=$2
+# tag name for new version
 VERSIONTAG=${VERSIONPREFIX}${VERSIONNUMBER}
-BRANCH="${BRANCHPREFIX}${VERSIONTAG}"
+# the new release/ branch
+RELEASEBRANCH="${RELEASEPREFIX}${VERSIONTAG}"
 
 # tests for a clean state
 WORKINGDIRDIRTY=$(git status --porcelain)
-CURRENTBRANCH=$(git branch | grep \* | cut -d ' ' -f2)
+CURRENTBRANCH=$(git branch --show-current)
 
 # do work based on used strategy option
 if [ "$STRATEGY" == "alternate" ]; then
@@ -67,13 +69,12 @@ if [ "$STRATEGY" == "alternate" ]; then
     # annotated tags and data from package.json
     LASTVERSION="$(git rev-list --max-parents=0 HEAD)"
     CURRENTVERSION=$(cat package.json | grep version | head -1 | awk -F: '{ print $2 }' | sed 's/[",]//g' | tr -d '[[:space:]]')
-    if git describe --abbrev=0 "$BRANCHRELEASE" &>/dev/null; then
-        LASTVERSION=$(git describe --abbrev=0 "$BRANCHRELEASE")
+    if git describe --abbrev=0 "$MAINBRANCH" &>/dev/null; then
+        LASTVERSION=$(git describe --abbrev=0 "$MAINBRANCH")
     fi
 else
-    # third parameter in release [create|publish|finish] [version] [commit]
-    # is used as a reference to branch off from.
-    BRANCHFROM=${3:-$BRANCHFROM}
+    # third parameter is used as a reference to branch off from.
+    NEXTBRANCH=${3:-$NEXTBRANCH}
 fi
 
 # =================================
@@ -96,15 +97,15 @@ function createRelease {
     #  if no version number is given
     if [ -z "$VERSIONNUMBER" ]; then
 
-        echo -e "\nERR: No release name given!\n"
+        echo -e "${red}⮕ ERROR:${normal} No release name given!"
         exit 1
     fi
 
     # make sure version does not start with tag prefix
     # but instead represents a valid semver syntax or npm version option.
     if [[ ${VERSIONNUMBER:0:1} == "$VERSIONPREFIX" ]]; then
-        echo -e "\n⮕ ${red}ERR: Version starts with version tag prefix: '$VERSIONPREFIX'.${normal}"
-        echo -e "\nThis is not allowed.\nUse full semver syntax like: 1.2.0"
+        echo -e "${red}⮕ ERROR:${normal} Version starts with version tag prefix: '$VERSIONPREFIX'.${normal}"
+        echo -e "This is not allowed.\nUse full semver syntax like: 1.2.0"
         echo -e "Or if you use alternate strategy, any of these npm version options:\nmajor, minor, patch."
         exit 1
     fi
@@ -112,34 +113,41 @@ function createRelease {
     case $STRATEGY in
     alternate)
         # make sure to checkout 'next' branch
-        if [ ! "$CURRENTBRANCH" == "$BRANCHFROM" ]; then
-            git checkout "$BRANCHFROM"
+        if [ ! "$CURRENTBRANCH" == "$NEXTBRANCH" ]; then
+            git checkout "$NEXTBRANCH"
         fi
 
         # use npm version if package.json exists
         if [ -f package.json ]; then
-            echo -e "\n${yellow}⮕${normal} Bump package version"
+            echo -e "${yellow}⮕${normal} Bump package version"
             VERSION=$(npm --silent --no-git-tag-version version "$VERSIONNUMBER")
             VERSIONTAG=$(echo "$VERSION" | tail -1)
+            RELEASEBRANCH="${RELEASEPREFIX}${VERSIONTAG}"
         else
             # warn if npm version param is given but no package.json found
             if [[ $VERSIONNUMBER == 'major' || $VERSIONNUMBER == 'minor' || $VERSIONNUMBER == 'patch' ]]; then
-                echo -e "${red}⮕ ERR: No package.json file found!${normal}"
+                echo -e "${red}⮕ ERROR:${normal} No package.json file found!${normal}"
                 exit 1
             fi
         fi
+
+        # checkout tmp release/ branch
+        echo -e "${yellow}⮕${normal} Create new release branch '${RELEASEBRANCH}'"
+        git checkout -b "$RELEASEBRANCH" "$NEXTBRANCH"
 
         # extract version number without prefix
         VERSION=${VERSIONTAG/#$VERSIONPREFIX/}
 
         writeChangelogAlternate "$VERSION" &&
-            echo -e "\n${green}⮕ Release $VERSION created.${normal}" &&
+            git add --all &&
+            git commit -m "Add release data to CHANGELOG" &&
+            echo -e "\n${green}⮕ Release branch $VERSION created.${normal}" &&
             echo -e "Continue with updating the CHANGELOG.md and then call:\ngit release f"
         exit 0
         ;;
     *)
         # checkout release/vxxx branch
-        git checkout -b "$BRANCH" "$BRANCHFROM"
+        git checkout -b "$RELEASEBRANCH" "$NEXTBRANCH"
 
         echo "Make sure to publish the release if its not finished yet so others can add commits to it."
         ;;
@@ -149,7 +157,7 @@ function createRelease {
 
 # pushes the branch to remote
 function publishRelease {
-    git push -u origin "$BRANCH"
+    git push -u origin "$RELEASEBRANCH"
 }
 
 # merges release branch into develop and creates
@@ -161,32 +169,32 @@ function finishRelease {
     if [ -z "$VERSIONNUMBER" ]; then
 
         # use current branch as the target
-        BRANCH=$CURRENTBRANCH
+        RELEASEBRANCH=$CURRENTBRANCH
 
         # extract version tag from release/vX.X.X branch
-        VERSIONTAG=${BRANCH/"$BRANCHPREFIX"/''}
+        VERSIONTAG=${RELEASEBRANCH/"$RELEASEPREFIX"/''}
 
         # Make sure the branch starts with the release/ prefix
         # otherwise abort and force manual usage over [version] parameter.
-        if [[ ! "$BRANCH" =~ $BRANCHPREFIX ]]; then
-            echo -e "\n⮕ ${red}ERR: Couldn't find the right release branch.${normal}\n"
+        if [[ ! "$RELEASEBRANCH" =~ $RELEASEPREFIX ]]; then
+            echo -e "${red}⮕ ERROR:${normal} Couldn't find the right release branch.${normal}"
             echo -e "Please give either a version name like this:"
             echo -e "git release finish 1.5.0"
-            echo -e "or checkout the branch you want to finish.\n"
+            echo -e "or checkout the branch you want to finish."
             usage
             exit 1
         fi
     fi
 
     # checkout release/vxxx branch
-    git checkout "$BRANCH"
+    git checkout "$RELEASEBRANCH"
 
     # this will set the LASTVERSION to the last
     # annotated tag
-    if git describe --abbrev=0 "$BRANCHRELEASE" &>/dev/null; then
+    if git describe --abbrev=0 "$MAINBRANCH" &>/dev/null; then
 
         # get last annotated tag (= version tags)
-        LASTVERSION=$(git describe --abbrev=0 "$BRANCHRELEASE")
+        LASTVERSION=$(git describe --abbrev=0 "$MAINBRANCH")
 
     # use first commit as fallback if no version exists
     else
@@ -196,8 +204,8 @@ function finishRelease {
         echo "Using full history as reference."
     fi
 
-    echo -e "\nRelease: $BRANCH"
-    echo -e "Version tag: $VERSIONTAG\n"
+    echo -e "Release: $RELEASEBRANCH"
+    echo -e "Version tag: $VERSIONTAG"
 
     # write a changelog if needed
     echo ""
@@ -241,15 +249,15 @@ function finishRelease {
     git commit -m "Release $VERSIONTAG" -m "$RELEASENOTES"
 
     # merge release/vxxx into develop
-    git checkout "$BRANCHFROM"
-    git merge "$BRANCH"
+    git checkout "$NEXTBRANCH"
+    git merge "$RELEASEBRANCH"
 
     # update master with release changes from develop
-    git checkout "$BRANCHRELEASE"
-    git merge "$BRANCHFROM" -m "Release $VERSIONTAG"
+    git checkout "$MAINBRANCH"
+    git merge "$NEXTBRANCH" -m "Release $VERSIONTAG"
 
     # Create version tag on master
-    git tag -a "$VERSIONTAG" "$BRANCHFROM" -m "Release $VERSIONTAG" -m "$RELEASENOTES"
+    git tag -a "$VERSIONTAG" "$NEXTBRANCH" -m "Release $VERSIONTAG" -m "$RELEASENOTES"
 
     if [ $HASREMOTE == 1 ]; then
         # push the branches
@@ -257,54 +265,83 @@ function finishRelease {
     fi
 
     if [ $? -eq 0 ]; then
-        echo -e "\n⮕ ${green}Release $VERSIONTAG successfully finished!${normal}"
+        echo -e "⮕ ${green}Release $VERSIONTAG successfully finished!${normal}"
     else
-        echo -e "\n⮕ ${red}ERR: Problems occured during creation of release:${normal} $VERSIONTAG"
+        echo -e "${red}⮕ ERROR:${normal} Problems occured during creation of release:${normal} $VERSIONTAG"
         exit 1
     fi
 
     # Remove release branch as its fully merged into develop
-    git branch -d "$BRANCH"
+    git branch -d "$RELEASEBRANCH"
 
     # finally check out 'next' branch so users don't accidentaly
     # continue working on the 'main' branch.
-    git checkout "$BRANCHFROM" &>/dev/null
+    git checkout "$NEXTBRANCH" &>/dev/null
 }
 
 # used by 'alternate' strategy.
 function finishReleaseAlternate {
 
-    # make sure to checkout 'next' branch
-    if [ ! "$CURRENTBRANCH" == "$BRANCHFROM" ]; then
-        git checkout "$BRANCHFROM"
+    # make sure user is on a release branch otherwise warn and exit
+    if [[ ! $CURRENTBRANCH == $RELEASEPREFIX* ]]; then
+        echo -e "${red}⮕ ERROR:${normal} Current branch '${CURRENTBRANCH}' is not a valid release branch! Check out the right one and try again."
+        exit 1
+    else
+        RELEASEBRANCH=$CURRENTBRANCH
     fi
 
-    echo -e "\n${yellow}⮕${normal} Create and commit tagged release"
+    git checkout "$RELEASEBRANCH"
+    echo -e "${yellow}⮕${normal} Create release ${CURRENTVERSION}"
 
     # make sure everything is added
+    if [ -n "$(git status --porcelain)" ]; then
+        echo -e "${yellow}⮕${normal} Changes detected - committing..."
+        git add --all
+        git commit -m "Clean working directory for ${CURRENTVERSION}"
+    fi
+
+    echo -e "${yellow}⮕${normal} Squash merge release into '${NEXTBRANCH}'"
+    # squash merge release branch into 'next'
+    git checkout "$NEXTBRANCH"
+    git merge --squash "$RELEASEBRANCH"
+
+    # commit the merge as release commit
+    echo -e "${yellow}⮕${normal} Commit squash merge"
     git add --all
-    git commit -m "Bump version to ${CURRENTVERSION}"
-    git checkout "$BRANCHRELEASE"
-    git merge --no-ff "$BRANCHFROM" -m "Release ${CURRENTVERSION}"
+    git commit -m "Release ${CURRENTVERSION}"
+
+    # add the release tag to it
+    echo -e "${yellow}⮕${normal} Create release tag ${VERSIONPREFIX}${CURRENTVERSION}"
     git tag -a "${VERSIONPREFIX}${CURRENTVERSION}" -m "Release ${CURRENTVERSION}"
+
+    # merge into 'main' branch
+    echo -e "${yellow}⮕${normal} Merge release into '$NEXTBRANCH'"
+    git checkout "$MAINBRANCH"
+    git merge "$NEXTBRANCH"
 
     # push if remote exists
     if [ $HASREMOTE == 1 ]; then
-        echo -e "\n${yellow}⮕${normal} Push release"
+        echo -e "${yellow}⮕${normal} Push release"
         git push --follow-tags
     fi
 
-    # show success message if everything went well
+    # check for errors otherwise delete release branch
     if [ $? -eq 0 ]; then
-        echo -e "\n${green}⮕${normal} Release ${CURRENTVERSION} finished!"
+        # delete release/ branch
+        echo -e "${yellow}⮕${normal} Delete '$RELEASEBRANCH'"
+        git branch -D "$RELEASEBRANCH"
+
+        # finally check out 'next' branch so users don't
+        # continue working on the 'main' branch
+        echo -e "${yellow}⮕${normal} Checkout '$NEXTBRANCH'"
+        git checkout "$NEXTBRANCH" &>/dev/null
+
+        # final finish message
+        echo -e "${green}⮕ Release ${CURRENTVERSION} finished!${normal}"
     else
-        echo -e "\n⮕ ${red}ERR: Problems occured during creation of release:${normal} $CURRENTVERSION"
+        echo -e "${red}⮕ ERROR:${normal} Problems occured during creation of release:${normal} $CURRENTVERSION"
         exit 1
     fi
-
-    # finally check out 'next' branch so users don't
-    # continue working on the 'main' branch.
-    git checkout "$BRANCHFROM" &>/dev/null
 }
 
 # Automatically prepends an entry in the CHANGELOG.md file based on
@@ -325,18 +362,18 @@ function writeChangelog {
     mv _tmp-release-message.md CHANGELOG.md
 
     # tell user our success
-    echo -e "\n⮕ ${green}Successfully added changelog entry for:${normal} $VERSIONTAG."
+    echo -e "⮕ ${green}Successfully added changelog entry for:${normal} $VERSIONTAG."
 }
 
 function createChangelogFromLog {
     # use full git log as reference if no version exist
     if [ "$LASTVERSION" = 'false' ]; then
-        git log --pretty=format:"- %s" "$BRANCHFROM" >_tmp-release-note.txt
+        git log --pretty=format:"- %s" "$NEXTBRANCH" >_tmp-release-note.txt
 
     # use latest annotated tag as reference if it exists
     else
         # save log output to tmp release note
-        git log --pretty=format:"- %s" "$LASTVERSION"..."$BRANCHFROM" >_tmp-release-note.txt
+        git log --pretty=format:"- %s" "$LASTVERSION"..."$NEXTBRANCH" >_tmp-release-note.txt
     fi
 
     echo "Content:"
@@ -352,7 +389,7 @@ function writeChangelogAlternate {
     DATE=$(date +%Y-%m-%d)
     HEADLINE="# ${VERSION} - ${DATE}"
 
-    echo -e "\n${yellow}⮕${normal} Update CHANGELOG.md for $VERSION"
+    echo -e "${yellow}⮕${normal} Update CHANGELOG.md for $VERSION"
 
     if [[ -n $COMMITURL ]]; then
         COMMITLINK=${COMMITURL/"{commit}"/"%H"}
@@ -364,11 +401,11 @@ function writeChangelogAlternate {
     echo "last version: $LASTVERSION"
 
     # extract commits from log into tmp var
-    LOG_FIXED=$(git log --grep='^\[\bfix\b\]' --pretty=format:"- %s $COMMITLINK" "$LASTVERSION".."$BRANCHFROM")
-    LOG_CHANGED=$(git log --grep='^\[\bchange\b\]' --pretty=format:"- %s $COMMITLINK" "$LASTVERSION".."$BRANCHFROM")
-    LOG_ADDED=$(git log --grep='^\[\badd\b\]' --pretty=format:"- %s $COMMITLINK" "$LASTVERSION".."$BRANCHFROM")
-    LOG_BREAKS=$(git log --grep='^\[\bbreak\b\]' --pretty=format:"- %s $COMMITLINK" "$LASTVERSION".."$BRANCHFROM")
-    LOG_MISC=$(git log --pretty=format:"- %s $COMMITLINK" "$LASTVERSION".."$BRANCHFROM" | grep -v "\[change\|\[fix\|\[add\|\[break")
+    LOG_FIXED=$(git log --grep='^\[\bfix\b\]' --pretty=format:"- %s $COMMITLINK" "$LASTVERSION".."$NEXTBRANCH")
+    LOG_CHANGED=$(git log --grep='^\[\bchange\b\]' --pretty=format:"- %s $COMMITLINK" "$LASTVERSION".."$NEXTBRANCH")
+    LOG_ADDED=$(git log --grep='^\[\badd\b\]' --pretty=format:"- %s $COMMITLINK" "$LASTVERSION".."$NEXTBRANCH")
+    LOG_BREAKS=$(git log --grep='^\[\bbreak\b\]' --pretty=format:"- %s $COMMITLINK" "$LASTVERSION".."$NEXTBRANCH")
+    LOG_MISC=$(git log --pretty=format:"- %s $COMMITLINK" "$LASTVERSION".."$NEXTBRANCH" | grep -v "\[change\|\[fix\|\[add\|\[break")
 
     # use url to branch comparison between old and new release
     if [[ -n $COMPAREURL ]]; then
@@ -401,9 +438,6 @@ function writeChangelogAlternate {
     # put content into tmp changelog
     echo -e "$TMPCONTENT" >$TMPRELEASEMSG
 
-    # add a new line
-    echo -e "\n---\n" >>$TMPRELEASEMSG
-
     # attach old changelog content if it exists
     if [ -f CHANGELOG.md ]; then
         cat CHANGELOG.md >>$TMPRELEASEMSG
@@ -419,17 +453,17 @@ function writeChangelogAlternate {
 # =================================
 # abort if working directory is dirty
 if [ "$WORKINGDIRDIRTY" ] && [ "$STRATEGY" == "default" ]; then
-    echo -e "\nERR: Your working directory is dirty!\n"
+    echo -e "${red}⮕ ERROR:${normal} Your working directory is dirty!\n"
     git status
     exit 1
 fi
 
 # make sure the branches are up to date
-if git checkout "$BRANCHFROM" &>/dev/null &&
+if git checkout "$NEXTBRANCH" &>/dev/null &&
     [ $HASREMOTE == 1 ] &&
     [ "$(git rev-parse HEAD)" != "$(git rev-parse @{u})" ]; then
 
-    echo -e "\n⮕ ${red}ERR: HEAD and origin/HEAD are deviated!${normal}"
+    echo -e "${red}⮕ERR:${normal} HEAD and origin/HEAD are deviated!${normal}"
     echo -e "Make sure you merged/pulled new commits."
     echo ""
     git status
@@ -438,7 +472,7 @@ fi
 
 # abort if version tag already exists
 if [ "$(git tag -l "$VERSIONTAG")" ]; then
-    echo -e "\n⮕ ${red}ERR: Version already exists!${normal}\n"
+    echo -e "${red}⮕ ERROR:${normal} Version already exists!${normal}\n"
     git show "$VERSIONTAG"
     exit 1
 fi

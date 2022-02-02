@@ -15,15 +15,15 @@ CMD=${1:-create}
 # make sure the aliases trigger the right
 # subcommand
 case "$CMD" in
-    c|create)
-        CMD='create'
-        ;;
-    p|publish)
-        CMD='publish'
-        ;;
-    f|finish)
-        CMD='finish'
-        ;;
+c | create)
+    CMD='create'
+    ;;
+p | publish)
+    CMD='publish'
+    ;;
+f | finish)
+    CMD='finish'
+    ;;
 esac
 
 # get the settings from git config
@@ -36,7 +36,7 @@ BRANCH="${BRANCHPREFIX}$HOTFIXNAME"
 
 # make sure the 'next' branch exists
 # use the 'main' branch as a fallback
-if ! git rev-parse --quiet --verify "$BRANCHFROM" &> /dev/null; then
+if ! git rev-parse --quiet --verify "$BRANCHFROM" &>/dev/null; then
     BRANCHFROM=$BRANCHRELEASE
 fi
 
@@ -82,22 +82,23 @@ function finishHotfix {
     # The setting "nextflow.general.strategy" controls how
     # additional branches are merged into the 'next' and 'main' branch.
     case $STRATEGY in
-        alternate)
-            # merge without fast-forward into 'next' branch
-            git checkout "$BRANCHFROM"
-            git merge --no-ff "$BRANCH" -m "Implement $BRANCH"
-            # tag the merge with hotfix name
-            git tag "$BRANCH"
-            # and delete its hotfix/* branch
-            git branch -d "$BRANCH"
+    alternate)
+        # merge without fast-forward into 'next' branch
+        git checkout "$BRANCHFROM"
+        git merge --squash "$BRANCH"
+        git commit -m "Implement $BRANCH"
+        # tag the merge with hotfix name
+        git tag "$BRANCH"
+        # and delete its hotfix/* branch
+        git branch -D "$BRANCH"
         ;;
-        *)
-	    git checkout "$BRANCHFROM"
-	    git merge "$BRANCH" -m "Implement hotfix '$HOTFIXNAME'"
-	    git branch -d "$BRANCH"
+    *)
+        git checkout "$BRANCHFROM"
+        git merge "$BRANCH" -m "Implement hotfix '$HOTFIXNAME'"
+        git branch -d "$BRANCH"
         ;;
     esac
-    
+
     if [ $? -eq 0 ]; then
         echo -e "\n⮕ ${green}Hotfix $HOTFIXNAME successfully implemented!${normal}\n"
     else
@@ -111,14 +112,14 @@ function publishHotfix {
 }
 
 # abort if the [name] is missing and show the help
-if [ -z "$2" ] && [ "$CMD" == "create" ] ; then
+if [ -z "$2" ] && [ "$CMD" == "create" ]; then
     echo -e "\nERR: Parameter missing or command not found!\n"
     usage
     exit 1
 fi
 
 # abort if working directory is dirty
-if [ "$WORKINGDIRDIRTY" ] ; then
+if [ "$WORKINGDIRDIRTY" ]; then
     echo -e "\n⮕ ${yellow}Warning:${normal} Your working directory is dirty!\n"
     git status
     echo -e "${yellow}"
@@ -132,30 +133,30 @@ fi
 
 # the main logic handler.
 case "$CMD" in
-    create)
-        if [ "$BRANCHEXISTS" ] ; then
-            echo -e "\n${red}ERR: Branch $BRANCH already exists!${normal}\n"
-            exit 1
+create)
+    if [ "$BRANCHEXISTS" ]; then
+        echo -e "\n${red}ERR: Branch $BRANCH already exists!${normal}\n"
+        exit 1
 
-        else
-            git checkout -b "$BRANCH" "$BRANCHFROM"
-        fi
-        exit
-        ;;
+    else
+        git checkout -b "$BRANCH" "$BRANCHFROM"
+    fi
+    exit
+    ;;
 
-    finish)
-        finishHotfix
-        exit
-        ;;
+finish)
+    finishHotfix
+    exit
+    ;;
 
-    publish)
-        publishHotfix
-        exit
-        ;;
+publish)
+    publishHotfix
+    exit
+    ;;
 
-    *)
-        usage
-        exit
-        ;;
+*)
+    usage
+    exit
+    ;;
 
 esac
