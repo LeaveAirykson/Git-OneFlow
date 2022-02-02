@@ -1,15 +1,28 @@
+# 4.5.0 - 2022-02-02
+
+### Changed
+
+- Refactor alternate strategy to use squash merges instead of --no-ff (913f6f0)
+
+### Misc
+
+- Add package.json (4a510bb)
+
 ## v4.4.0
+
 - Write changelog based on commit prefix in alternate strategy
 
 ## v4.3.0
+
 - Change format for git log in changelog creation (alternate)
 
 ## v4.2.1
+
 - Fix alternate release strategy empty versiontag when hooks are used for npm version
 
 ## v4.2.0
-- Refactor git-release to improve verbosity and add use only commit subject for changelog.
 
+- Refactor git-release to improve verbosity and add use only commit subject for changelog.
 
 ## v4.1.0
 
