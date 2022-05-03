@@ -149,7 +149,7 @@ setup)
     setup
     ;;
 
-install)
+install | update)
     # greet
     echo -e "\n⮕ ${yellow}Installing git nextflow commands${normal}"
 
