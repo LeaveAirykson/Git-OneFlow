@@ -1,3 +1,20 @@
+# [4.7.0](https://github.com/LeaveAirykson/git-nextflow/compare/v4.6.0...v4.7.0) - 2022-05-03
+
+### Fixed
+
+- Fix writing gitconfigs and add 'nextflow config' command ([a9cec14](https://github.com/LeaveAirykson/git-nextflow/commit/a9cec1411497cdf6b10aab622bbd7a1fa2a12612)) 
+- Remove tmp install dir before cloning new one ([027eeda](https://github.com/LeaveAirykson/git-nextflow/commit/027eeda85f902962807cce2b025c36be8c3ae23f)) 
+
+### Changed
+
+- Improve instructions readme ([097d9e7](https://github.com/LeaveAirykson/git-nextflow/commit/097d9e7d3bf8b986e1ae2237d6a68bb43a18436c)) 
+- Remove obsolete .version file ([c2392b9](https://github.com/LeaveAirykson/git-nextflow/commit/c2392b98afb69a66d69860fb8453f84b71cc4a71)) 
+- Update instructions in readme file ([c645d4a](https://github.com/LeaveAirykson/git-nextflow/commit/c645d4a1f689b268d49658491e55a8833070df56)) 
+- Add update command alias for install routine ([5c29956](https://github.com/LeaveAirykson/git-nextflow/commit/5c29956940e9a3c98cb8f11b5125f796cfce70dc)) 
+- Seperate setup command from install routine ([a423d82](https://github.com/LeaveAirykson/git-nextflow/commit/a423d828a0a50fcb82e49e3e8a9fcda0af6826b0)) 
+- Implement better setup file and improved changelog creation ([e778634](https://github.com/LeaveAirykson/git-nextflow/commit/e77863477cf2d160de32094ab6a45ee041385b21)) 
+- Refactor git-release to support ticket extraction ([8b3f4ff](https://github.com/LeaveAirykson/git-nextflow/commit/8b3f4ffb7a9d66a43a658ec0525a8e6585eca4dd)) 
+
 # 4.6.0 - 2022-02-02
 
 ### Fixed
