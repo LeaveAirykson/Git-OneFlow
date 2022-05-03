@@ -21,6 +21,10 @@ DEF_HOTFIX=$(git config --get nextflow.prefix.hotfix || echo "hotfix/")
 DEF_RELEASE=$(git config --get nextflow.prefix.release || echo "release/")
 DEF_VERSION=$(git config --get nextflow.prefix.version || echo "v")
 DEF_STRATEGY=$(git config --get nextflow.general.strategy || echo "default")
+DEF_COMPAREURL=$(git config --get nextflow.general.compareurl)
+DEF_COMMITURL=$(git config --get nextflow.general.commiturl)
+DEF_TICKETURL=$(git config --get nextflow.general.ticketurl)
+DEF_TICKETPATTERN=$(git config --get nextflow.prefix.ticket)
 
 SET_MAIN="$DEF_MAIN"
 SET_NEXT="$DEF_NEXT"
@@ -32,27 +36,27 @@ SET_STRATEGY="$DEF_STRATEGY"
 
 setup() {
     # ask user for settings
-    read -p "Name of main branch($DEF_MAIN): " USEMAIN
-    SET_MAIN=${USEMAIN:-SET_MAIN}
+    read -ep "Name of main branch($SET_MAIN): " USEMAIN
+    SET_MAIN=${USEMAIN:-"$SET_MAIN"}
 
-    read -p "Name of next branch($DEF_NEXT): " USENEXT
-    SET_NEXT=${USENEXT:-SET_NEXT}
+    read -ep "Name of next branch($SET_NEXT): " USENEXT
+    SET_NEXT=${USENEXT:-"$SET_NEXT"}
 
-    read -p "Prefix for feature branch($DEF_FEATURE): " USEFEATURE
-    SET_FEATURE=${USEFEATURE:-SET_FEATURE}
+    read -ep "Prefix for feature branch($SET_FEATURE): " USEFEATURE
+    SET_FEATURE=${USEFEATURE:-"$SET_FEATURE"}
 
-    read -p "Prefix for hotfix branch($DEF_HOTFIX): " USEHOTFIX
-    SET_HOTFIX=${USEHOTFIX:-SET_HOTFIX}
+    read -ep "Prefix for hotfix branch($SET_HOTFIX): " USEHOTFIX
+    SET_HOTFIX=${USEHOTFIX:-"$SET_HOTFIX"}
 
-    read -p "Prefix for release branch($DEF_RELEASE): " USERELEASE
-    SET_RELEASE=${USERELEASE:-SET_RELEASE}
+    read -ep "Prefix for release branch($SET_RELEASE): " USERELEASE
+    SET_RELEASE=${USERELEASE:-"$SET_RELEASE"}
 
-    read -p "Prefix for version tag($DEF_VERSION): " USEVERSION
-    SET_VERSION=${USEVERSION:-SET_VERSION}
+    read -ep "Prefix for version tag($SET_VERSION): " USEVERSION
+    SET_VERSION=${USEVERSION:-"$SET_VERSION"}
 
     echo "Release creation strategy - 'default' or 'alternate'"
-    read -p "Strategy: ($DEF_STRATEGY): " USESTRATEGY
-    SET_STRATEGY=${USESTRATEGY:-SET_STRATEGY}
+    read -ep "Strategy: ($SET_STRATEGY): " USESTRATEGY
+    SET_STRATEGY=${USESTRATEGY:-"$SET_STRATEGY"}
 
     # next settings are optional and only for 'alternate' strategy
     if [ "$SET_STRATEGY" != "alternate" ]; then
@@ -60,51 +64,41 @@ setup() {
         exit 0
     fi
 
-    echo -e "${bold}Release compare url${normal}"
+    echo -e "\n${bold}Release compare url${normal}"
     echo "When set, the headline of the release inside the CHANGELOG.md will be linked to a comparison url."
     echo "Placeholders:"
     echo "{new} - the new release tag"
     echo "{old} - the previous release tag"
     echo "Example: https://bitbucket.org/myspace/myrepo/branches/compare/{new}%0D{old}#diff"
     echo ""
-    read -p "Release compare url:" USECOMPAREURL
+    read -ep "Release compare url:" USECOMPAREURL
 
-    echo -e "${bold}Commit url${normal}"
+    echo -e "\n${bold}Commit url${normal}"
     echo "When set, nextflow will set links on commit hashes in CHANGELOG.md."
     echo "Placeholders:"
     echo "{commit} - the commit hash"
     echo "Example: https://bitbucket.org/myspace/myrepo/commits/{commit}"
     echo ""
-    read -p "Commit url:" USECOMMITURL
+    read -ep "Commit url:" USECOMMITURL
 
-    echo -e "${bold}Ticket url${normal}"
+    echo -e "\n${bold}Ticket url${normal}"
     echo "When set, nextflow will set links on ticket names in CHANGELOG.md."
     echo "Placeholders:"
     echo "{ticket} - the ticket key"
     echo "Example: https://myticketprovider.com/browse/{ticket}"
     echo ""
-    read -p "Ticket url:" USETICKETURL
+    read -ep "Ticket url:" USETICKETURL
 
-    if "$USETICKETURL"; then
-        echo -e "${bold}Ticket pattern${normal}"
+    if [ -n "$USETICKETURL" ]; then
+        echo -e "\n${bold}Ticket pattern${normal}"
         echo "pattern for ticket extractions from commit messages."
         echo "Example: RAL-"
         echo ""
-        read -p "Ticket syntax:" USETICKETPATTERN
+        read -ep "Ticket syntax:" USETICKETPATTERN
     fi
 
     # set git configs
     setgitconfigs
-}
-
-setglobalgitconfigs() {
-    git config --global nextflow.branch.main "$SET_MAIN"
-    git config --global nextflow.branch.next "$SET_NEXT"
-    git config --global nextflow.prefix.feature "$SET_FEATURE"
-    git config --global nextflow.prefix.hotfix "$SET_HOTFIX"
-    git config --global nextflow.prefix.release "$SET_RELEASE"
-    git config --global nextflow.prefix.version "$SET_VERSION"
-    git config --global nextflow.general.strategy "$SET_STRATEGY"
 }
 
 setgitconfigs() {
@@ -149,6 +143,11 @@ setup)
     setup
     ;;
 
+config)
+    git config -l | grep '^nextflow.'
+    echo -e "\n${yellow}Notice:${normal} Settings are aggregated from global and local gitconfig."
+    ;;
+
 install | update)
     # greet
     echo -e "\n⮕ ${yellow}Installing git nextflow commands${normal}"
@@ -171,7 +170,5 @@ install | update)
     rm -rf "/tmp/$REPONAME"
 
     echo -e "⮕ ${green}Successfully installed git nextflow.${normal}"
-
-    exit
     ;;
 esac
