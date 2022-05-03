@@ -31,13 +31,15 @@ f | finish)
 esac
 
 # get the settings from git config
-RELEASEPREFIX=$(git config --get nextflow.prefix.release)
-NEXTBRANCH=$(git config --get nextflow.branch.next)
-MAINBRANCH=$(git config --get nextflow.branch.main)
-VERSIONPREFIX=$(git config --get nextflow.prefix.version)
-STRATEGY=$(git config --get nextflow.general.strategy)
+RELEASEPREFIX=$(git config --get nextflow.prefix.release || echo 'release/')
+NEXTBRANCH=$(git config --get nextflow.branch.next || echo 'develop')
+MAINBRANCH=$(git config --get nextflow.branch.main || echo 'master')
+VERSIONPREFIX=$(git config --get nextflow.prefix.version || echo 'v')
+STRATEGY=$(git config --get nextflow.general.strategy || echo 'alternate')
 COMPAREURL=$(git config --get nextflow.general.compareurl)
 COMMITURL=$(git config --get nextflow.general.commiturl)
+TICKETURL=$(git config --get nextflow.general.ticketurl)
+TICKETPATTERN=$(git config --get nextflow.prefix.ticket)
 TMPRELEASEMSG="_tmp-release-message.md"
 HASREMOTE=0
 
@@ -380,6 +382,14 @@ function createChangelogFromLog {
     cat _tmp-release-note.txt
 }
 
+function cleanChangelogEntry {
+    if [[ -n $TICKETURL ]] && [[ -n $TICKETPATTERN ]]; then
+        echo "$1" | tr '\n' ' ' | sed 's/\+\+\!\!/\n-/g' | sed 's/_body__body_//' | sed 's/\#resolve//' | sed 's/\#close//' | sed "s~\(${TICKETPATTERN}\S*\)~(\[\1\](${TICKETURL}\1))~" | sed 's/_body__//' | sed 's/__body_//'
+    else
+        echo "$1" | tr '\n' ' ' | sed 's/\+\+\!\!/\n-/g'
+    fi
+}
+
 # Automatically prepends an entry in the CHANGELOG.md
 # file based on the commit messages between the last release tag.
 # Will prompt the user if they want to autocreate the
@@ -400,12 +410,18 @@ function writeChangelogAlternate {
 
     echo "last version: $LASTVERSION"
 
-    # extract commits from log into tmp var
-    LOG_FIXED=$(git log --grep='^\[\bfix\b\]' --pretty=format:"- %s $COMMITLINK" "$LASTVERSION".."$NEXTBRANCH")
-    LOG_CHANGED=$(git log --grep='^\[\bchange\b\]' --pretty=format:"- %s $COMMITLINK" "$LASTVERSION".."$NEXTBRANCH")
-    LOG_ADDED=$(git log --grep='^\[\badd\b\]' --pretty=format:"- %s $COMMITLINK" "$LASTVERSION".."$NEXTBRANCH")
-    LOG_BREAKS=$(git log --grep='^\[\bbreak\b\]' --pretty=format:"- %s $COMMITLINK" "$LASTVERSION".."$NEXTBRANCH")
-    LOG_MISC=$(git log --pretty=format:"- %s $COMMITLINK" "$LASTVERSION".."$NEXTBRANCH" | grep -v "\[change\|\[fix\|\[add\|\[break")
+    # change commit format to support ticket extraction
+    if [[ -n $TICKETURL ]] && [[ -n $TICKETPATTERN ]]; then
+        COMMITLINK="${COMMITLINK} _body__%b__body_"
+    fi
+
+    LOG_ALL=$(git log --pretty=format:"++!! %s $COMMITLINK" "$LASTVERSION".."$NEXTBRANCH")
+    LOG_ALL=$(cleanChangelogEntry "$LOG_ALL")
+    LOG_FIXED=$(echo "$LOG_ALL" | grep '\[fix\]')
+    LOG_CHANGED=$(echo "$LOG_ALL" | grep '\[change\]')
+    LOG_ADDED=$(echo "$LOG_ALL" | grep '\[add\]')
+    LOG_BREAKS=$(echo "$LOG_ALL" | grep '\[break\]')
+    LOG_MISC=$(echo "$LOG_ALL" | grep -v "\[change\|\[fix\|\[add\|\[break")
 
     # use url to branch comparison between old and new release
     if [[ -n $COMPAREURL ]]; then
@@ -437,7 +453,7 @@ function writeChangelogAlternate {
     fi
 
     # add final new line
-    TMPCONTENT+="\n\n"
+    TMPCONTENT+="\n"
 
     # put content into tmp changelog
     echo -e "$TMPCONTENT" >$TMPRELEASEMSG
