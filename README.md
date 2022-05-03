@@ -11,7 +11,7 @@ A simple and uncomplicated git workflow for implementing features, creating hotf
   - [Hotfixes](#hotfixes)
 - [References](#references)
 
-## Install/Uninstall/Update
+## Install/Uninstall
 
 ```bash
 # install via curl
@@ -20,11 +20,20 @@ curl -sL https://raw.githubusercontent.com/LeaveAirykson/git-nextflow/master/com
 # to update nextflow run
 git nextflow update
 
-# to uninstall run the following
+# to uninstall globally run the following
 git nextflow uninstall
 
 # or manually remove scripts
 rm ~/bin/{git-feature,git-hotfix,git-release,git-nextflow}
+```
+
+## Setup
+
+```bash
+# to setup a project
+cd myproject
+git init
+git nextflow setup
 ```
 
 ## The Nextflow Model
@@ -49,6 +58,10 @@ Per default Nextflow will add the following settings to your `~/.gitconfig`:
   release = release/  # prefix for release branches
   version = v         # prefix for version tag (v1.0.0)
 ```
+
+## Optional configuration
+
+You can improve the creation of the changelog in `alternate` strategy by setting external urls to your ticket system and repository.
 
 ### Strategy option
 

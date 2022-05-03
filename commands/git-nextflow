@@ -97,6 +97,16 @@ setup() {
     setgitconfigs
 }
 
+setglobalgitconfigs() {
+    git config --global nextflow.branch.main "$SET_MAIN"
+    git config --global nextflow.branch.next "$SET_NEXT"
+    git config --global nextflow.prefix.feature "$SET_FEATURE"
+    git config --global nextflow.prefix.hotfix "$SET_HOTFIX"
+    git config --global nextflow.prefix.release "$SET_RELEASE"
+    git config --global nextflow.prefix.version "$SET_VERSION"
+    git config --global nextflow.general.strategy "$SET_STRATEGY"
+}
+
 setgitconfigs() {
     git config nextflow.branch.main "$SET_MAIN"
     git config nextflow.branch.next "$SET_NEXT"
@@ -151,9 +161,6 @@ install)
         install -v -m 0644 "$cmd" "$INSTPATH"
         chmod +x "$INSTPATH/$(basename $cmd)"
     done
-
-    # run setup
-    setup
 
     # remove tmp repo
     rm -rf "/tmp/$REPONAME"
