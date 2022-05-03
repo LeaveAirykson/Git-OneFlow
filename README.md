@@ -2,14 +2,19 @@
 
 A simple and uncomplicated git workflow for implementing features, creating hotfixes and releases (tagged commits). This project is an attempted GitFlow alternative.
 
-- [Install/Uninstall](#installuninstall)
 - [The Nextflow Model](#the-nextflow-model)
+- [Install/Uninstall](#installuninstall)
+- [Setup](#setup)
 - [Default configuration](#default-configuration)
 - [Commands](#commands)
   - [Features](#features)
   - [Releases](#releases)
   - [Hotfixes](#hotfixes)
 - [References](#references)
+
+## The Nextflow Model
+
+[See the Wiki](https://github.com/LeaveAirykson/git-nextflow/wiki) for a more detailed introduction into the Nextflow Model.
 
 ## Install/Uninstall
 
@@ -36,17 +41,13 @@ git init
 git nextflow setup
 ```
 
-## The Nextflow Model
-
-[See the Wiki](https://github.com/LeaveAirykson/git-nextflow/wiki) for a more detailed introduction into the Nextflow Model.
-
 ## Default configuration
 
 Per default Nextflow will add the following settings to your `~/.gitconfig`:
 
 ```bash
 [Nextflow "general"]
-  strategy = default  # the merge strategy during release creation
+  strategy = default  # the merge strategy during branch creation
 
 [Nextflow "branch"]
   main = master       # the stable release branch
@@ -59,23 +60,54 @@ Per default Nextflow will add the following settings to your `~/.gitconfig`:
   version = v         # prefix for version tag (v1.0.0)
 ```
 
-## Optional configuration
+### Optional configuration
 
 You can improve the creation of the changelog in `alternate` strategy by setting external urls to your ticket system and repository.
 
+You can do this by running `git nextflow setup` and choose `alternate` strategy. This will activate further option prompts to setup ticket and repository extractions.
+
+These are:
+
+```bash
+[Nextflow "general"]
+  compareurl = "" # url to diff page. available placeholders: {old} {new}
+  commiturl = ""  # url to a commit. available placeholders: {commit}
+  ticketurl = ""  # url to ticket system.
+
+[Nextflow "prefix"]
+  ticket = ""     # Pattern to match ticket names for extraction
+                  # and to be appended to ticketurl
+```
+
 ### Strategy option
 
-The merge strategy used by nextflow can either be `default` or `alternate`.
+The strategy used by nextflow can either be `default` or `alternate`.
 
 #### `default`
 
+- The release version will be written into a `.version` file.
+- Release names must be fully written out. For example: `git release c 1.5.0`.
+- Merges are mostly performed with `--squash` setting to keep a slim log history.
+- Releases can be published with `git release publish`.
+- Changelog will be written from git log and script will ask user to edit it.
+
 #### `alternate`
+
+- Release names can use semver phrases like `major`, `minor`, `patch` during release creation. For example: `git release c patch`.
+- Version number will be written into `package.json` file.
+- Merges are mostly performed with `--squash` setting to keep a slim log history.
+- Releases can not be published for later finishing.The alternate strategy is meant to be used for instant creation and finishing.
+- Changelog will be written from git log and supports:
+  - extractions of ticket issues.
+  - grouped entrys by commit prefixes `[add]`, `[change]`, `[fix]`, `[break]`.
+  - link to comparison page to show diff between releases.
+  - linked commit hashes in entries.
 
 ## Commands
 
 ### Features
 
-Features are the smallest component in Nextflow. They represent small to medium work packages that can be grouped (Like modules). Feature branches are prefixed with `feature/` and are **just temporarily (and mostly locally) used**. As soon as a feature is finished, it gets **squash merged** into the staging branch to keep the history slim. After its implementation the branch gets deleted.
+Features are the smallest component in Nextflow. They represent small to medium work packages that can be grouped (Like modules). Feature branches are prefixed with `feature/` and are **just temporarily (and mostly locally) used**. As soon as a feature is finished, it gets merged into the staging branch. After its implementation the branch gets deleted.
 
 **git feature c <name>**
 
