@@ -1,6 +1,6 @@
-# Nextflow
+# Nextflow v4.7.0
 
-A simple and uncomplicated git workflow for implementing features, creating hotfixes and releases (tagged commits). This project is an attempted GitFlow alternative.
+A simple git workflow for implementing features, creating hotfixes and releases (tagged commits). This project is an attempted GitFlow alternative.
 
 - [The Nextflow Model](#the-nextflow-model)
 - [Install/Uninstall](#installuninstall)
