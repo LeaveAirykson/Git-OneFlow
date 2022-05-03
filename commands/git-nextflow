@@ -153,6 +153,11 @@ install)
     # greet
     echo -e "\n⮕ ${yellow}Installing git nextflow commands${normal}"
 
+    # make sure tmp repo does not exist
+    if [ -d "/tmp/$REPONAME" ]; then
+        rm -rf "/tmp/$REPONAME"
+    fi
+
     # clone repo into tmp folder
     git clone "$REPOURL" --branch "$BRANCH" --single-branch "/tmp/$REPONAME"
 
