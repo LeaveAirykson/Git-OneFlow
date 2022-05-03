@@ -35,6 +35,7 @@ SET_VERSION="$DEF_VERSION"
 SET_STRATEGY="$DEF_STRATEGY"
 
 setup() {
+    echo -e "\n${bold}General${normal}"
     # ask user for settings
     read -ep "Name of main branch($SET_MAIN): " USEMAIN
     SET_MAIN=${USEMAIN:-"$SET_MAIN"}
@@ -125,6 +126,8 @@ setgitconfigs() {
     if [[ -n "$USETICKETPATTERN" ]]; then
         git config nextflow.prefix.ticket "$USETICKETPATTERN"
     fi
+
+    echo -e "\n⮕ ${green}Successfully setup git config!${normal}"
 }
 
 # handle install

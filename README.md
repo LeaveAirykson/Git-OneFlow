@@ -5,7 +5,7 @@ A simple git workflow for implementing features, creating hotfixes and releases 
 - [The Nextflow Model](#the-nextflow-model)
 - [Install/Uninstall](#installuninstall)
 - [Setup](#setup)
-- [Default configuration](#default-configuration)
+- [Configuration](#configuration)
 - [Commands](#commands)
   - [Features](#features)
   - [Releases](#releases)
@@ -41,7 +41,9 @@ git init
 git nextflow setup
 ```
 
-## Default configuration
+## Configuration
+
+You can see your current nextflow config with `git nextflow config`. This will list aggregated settings based on your global gitconfig and your local one.
 
 Per default Nextflow will add the following settings to your `~/.gitconfig`:
 
