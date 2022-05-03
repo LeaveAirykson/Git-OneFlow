@@ -2,23 +2,29 @@
 
 A simple and uncomplicated git workflow for implementing features, creating hotfixes and releases (tagged commits). This project is an attempted GitFlow alternative.
 
-* [Install/Uninstall](#installuninstall)
-* [The Nextflow Model](#the-nextflow-model)
-* [Default configuration](#default-configuration)
-* [Commands](#commands)
-    * [Features](#features)
-    * [Releases](#releases)
-    * [Hotfixes](#hotfixes)
-* [References](#references)
+- [Install/Uninstall](#installuninstall)
+- [The Nextflow Model](#the-nextflow-model)
+- [Default configuration](#default-configuration)
+- [Commands](#commands)
+  - [Features](#features)
+  - [Releases](#releases)
+  - [Hotfixes](#hotfixes)
+- [References](#references)
 
-## Install/Uninstall
+## Install/Uninstall/Update
 
 ```bash
 # install via curl
-curl -sL https://raw.githubusercontent.com/LeaveAirykson/git-nextflow/master/install.sh | bash -s install
+curl -sL https://raw.githubusercontent.com/LeaveAirykson/git-nextflow/master/commands/git-nextflow | bash -s install
 
-# to uninstall just remove the script files
-rm ~/bin/{git-feature,git-hotfix,git-release}
+# to update nextflow run
+git nextflow update
+
+# to uninstall run the following
+git nextflow uninstall
+
+# or manually remove scripts
+rm ~/bin/{git-feature,git-hotfix,git-release,git-nextflow}
 ```
 
 ## The Nextflow Model
@@ -30,20 +36,32 @@ rm ~/bin/{git-feature,git-hotfix,git-release}
 Per default Nextflow will add the following settings to your `~/.gitconfig`:
 
 ```bash
+[Nextflow "general"]
+  strategy = default  # the merge strategy during release creation
+
 [Nextflow "branch"]
-    main = master       # the stable release branch
-    next = develop      # the pre-release branch
+  main = master       # the stable release branch
+  next = develop      # the pre-release branch
 
 [Nextflow "prefix"]
-    feature = feature/  # prefix for feature branches
-    hotfix = hotfix/    # prefix for hotfix branches
-    release = release/  # prefix for release branches
-    version = v         # prefix for version tag (v1.0.0)
+  feature = feature/  # prefix for feature branches
+  hotfix = hotfix/    # prefix for hotfix branches
+  release = release/  # prefix for release branches
+  version = v         # prefix for version tag (v1.0.0)
 ```
+
+### Strategy option
+
+The merge strategy used by nextflow can either be `default` or `alternate`.
+
+#### `default`
+
+#### `alternate`
 
 ## Commands
 
 ### Features
+
 Features are the smallest component in Nextflow. They represent small to medium work packages that can be grouped (Like modules). Feature branches are prefixed with `feature/` and are **just temporarily (and mostly locally) used**. As soon as a feature is finished, it gets **squash merged** into the staging branch to keep the history slim. After its implementation the branch gets deleted.
 
 **git feature c <name>**
@@ -78,6 +96,7 @@ The command starts the following workflow:
 3. Delete branch `feature/sidebar`.
 
 ### Releases
+
 Releases are being created for a very short time because there is no real work done in them. Only the Changelog will be updated and a tag will be set.
 
 There is only one command for creating releases:
@@ -129,6 +148,7 @@ Hotfixes should be postfixed with the version the bug was detected (f.e: `logo-f
 # create a hotfix named sidebar-logo@v1.10.1
 git hotfix c sidebar-logo@v1.10.1
 ```
+
 The command starts the following workflow:
 
 1. Branch off from `next` as `hotfix/sidebar-logo@v1.10.1` branch
@@ -152,8 +172,9 @@ The command starts the following workflow:
 1. Merge `hotfix/sidebar-logo@v1.10.1` back into `next`.
 2. Delete branch `hotfix/sidebar-logo@v1.10.1`.
 
-
 ## References
+
 This project would not be possible without the exceptional work of Adam Ruka (OneFlow) and Vincent Driessen (GitFlow)
+
 - [OneFlow](https://www.endoflineblog.com/oneflow-a-git-branching-model-and-workflow)
 - [GitFlow](https://nvie.com/posts/a-successful-git-branching-model/)

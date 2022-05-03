@@ -1,0 +1,165 @@
+#!/bin/bash
+# shellcheck disable=SC2063,SC2129,SC2181,SC2162
+
+# colors
+yellow="\033[33m"
+green="\033[32m"
+normal="\033[0m"
+bold="\033[1m"
+
+# defaults
+INSTPATH="$HOME/bin"
+REPONAME="git-nextflow"
+REPOURL="https://github.com/LeaveAirykson/git-nextflow"
+BRANCH=${2:-"master"}
+NVERSION="4.7.0"
+
+DEF_MAIN=$(git config --get nextflow.branch.main || echo "master")
+DEF_NEXT=$(git config --get nextflow.branch.next || echo "develop")
+DEF_FEATURE=$(git config --get nextflow.prefix.feature || echo "feature/")
+DEF_HOTFIX=$(git config --get nextflow.prefix.hotfix || echo "hotfix/")
+DEF_RELEASE=$(git config --get nextflow.prefix.release || echo "release/")
+DEF_VERSION=$(git config --get nextflow.prefix.version || echo "v")
+DEF_STRATEGY=$(git config --get nextflow.general.strategy || echo "default")
+
+SET_MAIN="$DEF_MAIN"
+SET_NEXT="$DEF_NEXT"
+SET_FEATURE="$DEF_FEATURE"
+SET_HOTFIX="$DEF_HOTFIX"
+SET_RELEASE="$DEF_RELEASE"
+SET_VERSION="$DEF_VERSION"
+SET_STRATEGY="$DEF_STRATEGY"
+
+setup() {
+    # ask user for settings
+    read -p "Name of main branch($DEF_MAIN): " USEMAIN
+    SET_MAIN=${USEMAIN:-SET_MAIN}
+
+    read -p "Name of next branch($DEF_NEXT): " USENEXT
+    SET_NEXT=${USENEXT:-SET_NEXT}
+
+    read -p "Prefix for feature branch($DEF_FEATURE): " USEFEATURE
+    SET_FEATURE=${USEFEATURE:-SET_FEATURE}
+
+    read -p "Prefix for hotfix branch($DEF_HOTFIX): " USEHOTFIX
+    SET_HOTFIX=${USEHOTFIX:-SET_HOTFIX}
+
+    read -p "Prefix for release branch($DEF_RELEASE): " USERELEASE
+    SET_RELEASE=${USERELEASE:-SET_RELEASE}
+
+    read -p "Prefix for version tag($DEF_VERSION): " USEVERSION
+    SET_VERSION=${USEVERSION:-SET_VERSION}
+
+    echo "Release creation strategy - 'default' or 'alternate'"
+    read -p "Strategy: ($DEF_STRATEGY): " USESTRATEGY
+    SET_STRATEGY=${USESTRATEGY:-SET_STRATEGY}
+
+    # next settings are optional and only for 'alternate' strategy
+    if [ "$SET_STRATEGY" != "alternate" ]; then
+        setgitconfigs
+        exit 0
+    fi
+
+    echo -e "${bold}Release compare url${normal}"
+    echo "When set, the headline of the release inside the CHANGELOG.md will be linked to a comparison url."
+    echo "Placeholders:"
+    echo "{new} - the new release tag"
+    echo "{old} - the previous release tag"
+    echo "Example: https://bitbucket.org/myspace/myrepo/branches/compare/{new}%0D{old}#diff"
+    echo ""
+    read -p "Release compare url:" USECOMPAREURL
+
+    echo -e "${bold}Commit url${normal}"
+    echo "When set, nextflow will set links on commit hashes in CHANGELOG.md."
+    echo "Placeholders:"
+    echo "{commit} - the commit hash"
+    echo "Example: https://bitbucket.org/myspace/myrepo/commits/{commit}"
+    echo ""
+    read -p "Commit url:" USECOMMITURL
+
+    echo -e "${bold}Ticket url${normal}"
+    echo "When set, nextflow will set links on ticket names in CHANGELOG.md."
+    echo "Placeholders:"
+    echo "{ticket} - the ticket key"
+    echo "Example: https://myticketprovider.com/browse/{ticket}"
+    echo ""
+    read -p "Ticket url:" USETICKETURL
+
+    if "$USETICKETURL"; then
+        echo -e "${bold}Ticket pattern${normal}"
+        echo "pattern for ticket extractions from commit messages."
+        echo "Example: RAL-"
+        echo ""
+        read -p "Ticket syntax:" USETICKETPATTERN
+    fi
+
+    # set git configs
+    setgitconfigs
+}
+
+setgitconfigs() {
+    git config nextflow.branch.main "$SET_MAIN"
+    git config nextflow.branch.next "$SET_NEXT"
+    git config nextflow.prefix.feature "$SET_FEATURE"
+    git config nextflow.prefix.hotfix "$SET_HOTFIX"
+    git config nextflow.prefix.release "$SET_RELEASE"
+    git config nextflow.prefix.version "$SET_VERSION"
+    git config nextflow.general.strategy "$SET_STRATEGY"
+
+    if [[ -n "$USECOMPAREURL" ]]; then
+        git config nextflow.general.compareurl "$USECOMPAREURL"
+    fi
+
+    if [[ -n "$USECOMMITURL" ]]; then
+        git config nextflow.general.commiturl "$USECOMMITURL"
+    fi
+
+    if [[ -n "$USETICKETURL" ]]; then
+        git config nextflow.general.ticketurl "$USETICKETURL"
+    fi
+
+    if [[ -n "$USETICKETPATTERN" ]]; then
+        git config nextflow.prefix.ticket "$USETICKETPATTERN"
+    fi
+}
+
+# handle install
+case "$1" in
+
+uninstall)
+    echo -e "⮕ ${yellow}Uninstalling git nextflow commands${normal}"
+    rm -vf "$INSTPATH/{git-feature,git-hotfix,git-release,git-nextflow}"
+    ;;
+
+version | --v | -v | --version)
+    echo "$NVERSION"
+    ;;
+
+setup)
+    setup
+    ;;
+
+install)
+    # greet
+    echo -e "\n⮕ ${yellow}Installing git nextflow commands${normal}"
+
+    # clone repo into tmp folder
+    git clone "$REPOURL" --branch "$BRANCH" --single-branch "/tmp/$REPONAME"
+
+    # install commands from repo
+    for cmd in "/tmp/$REPONAME/commands/"*; do
+        install -v -m 0644 "$cmd" "$INSTPATH"
+        chmod +x "$INSTPATH/$(basename $cmd)"
+    done
+
+    # run setup
+    setup
+
+    # remove tmp repo
+    rm -rf "/tmp/$REPONAME"
+
+    echo -e "⮕ ${green}Successfully installed git nextflow.${normal}"
+
+    exit
+    ;;
+esac
