@@ -263,7 +263,8 @@ function finishRelease {
 
     if [ $HASREMOTE == 1 ]; then
         # push the branches
-        git push --follow-tags
+        git push origin "$NEXTBRANCH" --follow-tags
+        git push origin "$MAINBRANCH" --follow-tags
     fi
 
     if [ $? -eq 0 ]; then
