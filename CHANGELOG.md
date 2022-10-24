@@ -1,3 +1,9 @@
+# [4.7.1](https://github.com/LeaveAirykson/git-nextflow/compare/v4.7.0...v4.7.1) - 2022-10-24
+
+### Fixed
+
+- Fixed git release f trying to push all branches ([e1e6bf9](https://github.com/LeaveAirykson/git-nextflow/commit/e1e6bf9383729075b1be749bee2fc9e5c7b5cc51)) 
+
 # [4.7.0](https://github.com/LeaveAirykson/git-nextflow/compare/v4.6.0...v4.7.0) - 2022-05-03
 
 ### Fixed
