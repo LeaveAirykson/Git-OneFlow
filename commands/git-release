@@ -456,6 +456,9 @@ function writeChangelogAlternate {
     # add final new line
     TMPCONTENT+="\n"
 
+    # sanitize multiple whitespaces
+    TMPCONTENT=$(echo "$TMPCONTENT" | tr -s ' ')
+
     # put content into tmp changelog
     echo -e "$TMPCONTENT" >$TMPRELEASEMSG
 
