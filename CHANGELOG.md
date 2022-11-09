@@ -1,3 +1,9 @@
+# [4.7.2](https://github.com/LeaveAirykson/git-nextflow/compare/v4.7.1...v4.7.2) - 2022-11-09
+
+### Fixed
+
+- Fix changelog write from alternate mode not using indendation correctly ([bf07bff](https://github.com/LeaveAirykson/git-nextflow/commit/bf07bff07a407684a6c67e73fe6eaa37f5969d65)) 
+
 # [4.7.1](https://github.com/LeaveAirykson/git-nextflow/compare/v4.7.0...v4.7.1) - 2022-10-24
 
 ### Fixed
