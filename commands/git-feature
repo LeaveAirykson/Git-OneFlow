@@ -33,7 +33,16 @@ BRANCHFROM=$(git config --get nextflow.branch.next)
 BRANCHRELEASE=$(git config --get nextflow.branch.main)
 STRATEGY=$(git config --get nextflow.general.strategy)
 FEATURENAME=$2
+MERGEOPTS="--squash"
+DELPARAM="-D"
 BRANCH="${BRANCHPREFIX}$FEATURENAME"
+
+# second param could be either a featurename
+# or git merge options. so we need to test for it.
+if [[ "$2" == -* ]]; then
+    MERGEOPTS="${@:2}"
+    DELPARAM="-d"
+fi
 
 # make sure the 'next' branch exists
 # use the 'main' branch as a fallback
@@ -86,12 +95,12 @@ function finishFeature {
     alternate)
         # merge without fast-forward into 'next' branch
         git checkout "$BRANCHFROM"
-        git merge --squash "$BRANCH"
+        git merge "$MERGEOPTS" "$BRANCH"
         git commit -m "[add] Implement $BRANCH"
         # tag the merge with feature name
         git tag "$BRANCH"
         # and delete its feature/* branch
-        git branch -D "$BRANCH"
+        git branch "$DELPARAM" "$BRANCH"
         ;;
     *)
         # extract commit messages for final commit bodytext

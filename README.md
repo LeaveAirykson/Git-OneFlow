@@ -89,7 +89,7 @@ The strategy used by nextflow can either be `default` or `alternate`.
 
 - The release version will be written into a `.version` file.
 - Release names must be fully written out. For example: `git release c 1.5.0`.
-- Merges are mostly performed with `--squash` setting to keep a slim log history.
+- Merges are performed with `--squash` setting to keep a slim log history.
 - Releases can be published with `git release publish`.
 - Changelog will be written from git log and script will ask user to edit it.
 
@@ -97,8 +97,9 @@ The strategy used by nextflow can either be `default` or `alternate`.
 
 - Release names can use semver phrases like `major`, `minor`, `patch` during release creation. For example: `git release c patch`.
 - Version number will be written into `package.json` file.
-- Merges are mostly performed with `--squash` setting to keep a slim log history.
-- Releases can not be published for later finishing.The alternate strategy is meant to be used for instant creation and finishing.
+- Hotfixes and Releases are `--squash` merged to keep a slim log history.
+- Features are merged using `--no-ff` by default to keep independent feature development visible. This can be altered by passing any other merge option.
+- Releases can not be published for later finishing. The alternate strategy is meant to be used for instant creation and finishing.
 - Changelog will be written from git log and supports:
   - extractions of ticket issues.
   - grouped entrys by commit prefixes `[add]`, `[change]`, `[fix]`, `[break]`.
