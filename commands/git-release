@@ -385,9 +385,9 @@ function createChangelogFromLog {
 
 function cleanChangelogEntry {
     if [[ -n $TICKETURL ]] && [[ -n $TICKETPATTERN ]]; then
-        echo "$1" | tr '\n' ' ' | sed 's/\+\+\!\!/\n-/g' | sed 's/_body__body_//' | sed 's/\#resolve//' | sed 's/\#close//' | sed "s~\(${TICKETPATTERN}\S*\)~(\[\1\](${TICKETURL}\1))~" | sed 's/_body__//' | sed 's/__body_//'
+        echo "$1" | tr '\n' ' ' | sed 's/\+\+\+\+/\n-/g' | sed 's/_body__body_//' | sed 's/\#resolve//' | sed 's/\#close//' | sed "s~\(${TICKETPATTERN}\S*\)~(\[\1\](${TICKETURL}\1))~" | sed 's/_body__//' | sed 's/__body_//'
     else
-        echo "$1" | tr '\n' ' ' | sed 's/\+\+\!\!/\n-/g'
+        echo "$1" | tr '\n' ' ' | sed 's/\+\+\+\+/\n-/g'
     fi
 }
 
@@ -416,13 +416,14 @@ function writeChangelogAlternate {
         COMMITLINK="${COMMITLINK} _body__%b__body_"
     fi
 
-    LOG_ALL=$(git log --pretty=format:"++!! %s $COMMITLINK" "$LASTVERSION".."$NEXTBRANCH")
+    LOG_ALL=$(git log --pretty=format:"++++ %s $COMMITLINK" --no-merges --invert-grep --grep='\[ignore\]' "$LASTVERSION".."$NEXTBRANCH")
     LOG_ALL=$(cleanChangelogEntry "$LOG_ALL")
     LOG_FIXED=$(echo "$LOG_ALL" | grep '\[fix\]')
     LOG_CHANGED=$(echo "$LOG_ALL" | grep '\[change\]')
     LOG_ADDED=$(echo "$LOG_ALL" | grep '\[add\]')
     LOG_BREAKS=$(echo "$LOG_ALL" | grep '\[break\]')
-    LOG_MISC=$(echo "$LOG_ALL" | grep -v "\[change\|\[fix\|\[add\|\[break")
+    LOG_REMOVED=$(echo "$LOG_ALL" | grep '\[remove\]')
+    LOG_MISC=$(echo "$LOG_ALL" | grep -v "\[change\|\[fix\|\[add\|\[break|\[remove")
 
     # use url to branch comparison between old and new release
     if [[ -n $COMPAREURL ]]; then
@@ -434,20 +435,24 @@ function writeChangelogAlternate {
     # start default changelog block
     TMPCONTENT="$HEADLINE"
     if [ -n "$LOG_BREAKS" ]; then
-        LOG_BREAKS="${LOG_BREAKS// \[break\]/''}"
+        LOG_BREAKS="${LOG_BREAKS// \[break\]/' '}"
         TMPCONTENT+="\n\n### Breaking changes\n\n$LOG_BREAKS"
     fi
     if [ -n "$LOG_FIXED" ]; then
-        LOG_FIXED="${LOG_FIXED// \[fix\]/''}"
-        TMPCONTENT+="\n\n### Fixed\n\n$LOG_FIXED"
+        LOG_FIXED="${LOG_FIXED// \[fix\]/' '}"
+        TMPCONTENT+="\n\n### Bug Fixes\n\n$LOG_FIXED"
     fi
     if [ -n "$LOG_ADDED" ]; then
-        LOG_ADDED="${LOG_ADDED// \[add\]/''}"
+        LOG_ADDED="${LOG_ADDED// \[add\]/' '}"
         TMPCONTENT+="\n\n### Added\n\n$LOG_ADDED"
     fi
     if [ -n "$LOG_CHANGED" ]; then
-        LOG_CHANGED="${LOG_CHANGED// \[change\]/''}"
+        LOG_CHANGED="${LOG_CHANGED// \[change\]/' '}"
         TMPCONTENT+="\n\n### Changed\n\n$LOG_CHANGED"
+    fi
+    if [ -n "$LOG_REMOVED" ]; then
+        LOG_REMOVED="${LOG_REMOVED// \[remove\]/' '}"
+        TMPCONTENT+="\n\n### Removed\n\n$LOG_REMOVED"
     fi
     if [ -n "$LOG_MISC" ]; then
         TMPCONTENT+="\n\n### Misc\n\n$LOG_MISC"
