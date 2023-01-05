@@ -423,7 +423,7 @@ function writeChangelogAlternate {
     LOG_ADDED=$(echo "$LOG_ALL" | grep '\[add\]')
     LOG_BREAKS=$(echo "$LOG_ALL" | grep '\[break\]')
     LOG_REMOVED=$(echo "$LOG_ALL" | grep '\[remove\]')
-    LOG_MISC=$(echo "$LOG_ALL" | grep -v "\[change\|\[fix\|\[add\|\[break|\[remove")
+    LOG_MISC=$(echo "$LOG_ALL" | grep -v "\[change\|\[fix\|\[add\|\[break\|\[remove")
 
     # use url to branch comparison between old and new release
     if [[ -n $COMPAREURL ]]; then
